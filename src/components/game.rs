@@ -5,6 +5,7 @@ use std::time::{Duration, Instant};
 use dioxus::prelude::*;
 use crate::backend::{do_play, poll_ai_play};
 use crate::components::Board;
+use crate::components::game_info_panel::GameInfoPanel;
 use crate::gamectrl::GameController;
 
 #[cfg(target_arch = "wasm32")]
@@ -26,7 +27,7 @@ pub(crate) fn Game(game_ctrl: GameController) -> Element {
     let _ = use_future(async move || {
         loop {
             let mut game_ctrl = use_context::<GameController>();
-            if game_ctrl.ai_move_time().is_some_and(|d| game_ctrl.time_since_last_move() > d) {
+            if game_ctrl.ai_play_time().is_some_and(|d| game_ctrl.time_since_last_play() > d) {
                 if let Some(vp) = poll_ai_play().await.unwrap() {
                     let g = do_play(vp.play).await.unwrap().unwrap();
                     game_ctrl.game_copy.set(g);
@@ -37,6 +38,11 @@ pub(crate) fn Game(game_ctrl: GameController) -> Element {
         }
     });
     rsx! {
-        Board {}
+        div {
+            class: "game-container",
+            Board {}
+            GameInfoPanel {}
+        }
+
     }
 }

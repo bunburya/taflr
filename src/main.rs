@@ -6,11 +6,13 @@ mod config;
 
 use std::time::Duration;
 use dioxus::prelude::*;
+use hnefatafl::pieces::Side;
 use hnefatafl::preset;
 use components::game::Game;
 use gamectrl::GameController;
 use crate::backend::new_game;
 use crate::config::GameSettings;
+use crate::gamectrl::Player;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
@@ -22,12 +24,6 @@ fn main() {
 
 #[component]
 fn App() -> Element {
-    let settings = GameSettings::new(
-        preset::boards::BRANDUBH,
-        preset::rules::BRANDUBH,
-        Some(Duration::from_secs(5)),
-        Some(Duration::from_secs(5))
-    );
     let resource = use_resource(|| async move {
         new_game(
             preset::rules::BRANDUBH,
@@ -38,7 +34,18 @@ fn App() -> Element {
     });
     match &*resource.read_unchecked() {
         Some(game) => rsx! {
-            Game { game_ctrl: GameController::new(game, settings.attacker_ai_time, settings.defender_ai_time) }
+            Game { game_ctrl: GameController::new(
+                game,
+                Player {
+                    name: "Attacker".to_string(),
+                    ai_play_time: Some(Duration::from_secs(5)),
+                },
+                Player {
+                    name: "Defender".to_string(),
+                    ai_play_time: Some(Duration::from_secs(5)),
+                },
+                "Federation Brandubh".to_string(),
+            )},
         },
         _ => rsx! { "Loading..." },
     }

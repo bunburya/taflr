@@ -1,83 +1,50 @@
-.board {
-    display: grid;
+.game-container {
+    display: flex;
+    flex-direction: row;
     width: 100%;
     height: 100%;
 }
 
-.size7 {
-    grid-template-columns: repeat(7, 1fr);
-    grid-template-rows: repeat(7, 1fr);
-}
-
-.size9 {
-    grid-template-columns: repeat(9, 1fr);
-    grid-template-rows: repeat(9, 1fr);
-}
-
-.size11 {
-    grid-template-columns: repeat(11, 1fr);
-    grid-template-rows: repeat(11, 1fr);
-}
-
-.size13 {
-    grid-template-columns: repeat(13, 1fr);
-    grid-template-rows: repeat(13, 1fr);
-}
-
-/* Wrapper around the board that adds left and bottom gutters */
-.board-wrapper {
+/* "Frame" around the board, including row and col labels */
+.board-frame {
     display: grid;
-    width: 100%;
+    width: 75%;
     height: 100%;
     background-color: #C1ABA6;
+    grid-template-columns: 0.5fr repeat(var(--board-size), 1fr) 0.5fr;
+    grid-template-rows: 0.5fr repeat(var(--board-size), 1fr) 0.5fr;
 }
 
-/* The wrapper layouts: 0.5 cell for gutter + N cells for board */
-.wrapper-size7 {
-    grid-template-columns: 0.5fr repeat(7, 1fr);
-    grid-template-rows: repeat(7, 1fr) 0.5fr;
-}
-
-.wrapper-size9 {
-    grid-template-columns: 0.5fr repeat(9, 1fr);
-    grid-template-rows: repeat(9, 1fr) 0.5fr;
-}
-
-.wrapper-size11 {
-    grid-template-columns: 0.5fr repeat(11, 1fr);
-    grid-template-rows: repeat(11, 1fr) 0.5fr;
-}
-
-.wrapper-size13 {
-    grid-template-columns: 0.5fr repeat(13, 1fr);
-    grid-template-rows: repeat(13, 1fr) 0.5fr;
-}
-
-/* Position the board inside the wrapper (skip the left column and bottom row) */
 .board {
-    grid-column: 2 / -1; /* from column 2 through the last board column */
-    grid-row: 1 / -2;    /* from row 1 up to the last board row (exclude bottom gutter) */
+    grid-column: 2 / -2;
+    grid-row: 2 / -2;
+    display: grid;
+    width: 100%;
+    height: 100%;
+    grid-template-columns: repeat(var(--board-size), 1fr);
+    grid-template-rows: repeat(var(--board-size), 1fr);
 }
 
 .label-cell {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 0.9em;
     user-select: none;
 }
 
 .board .square {
-    display: flex;                /* centre content */
+    display: flex;
     justify-content: center;
     align-items: center;
 }
 
-.board .cell img {
-    width: 80%;                   /* scale piece within cell */
-    height: 80%;
+.board .square .piece {
+    width: 100%;
+    height: 100%;
     object-fit: contain;
 }
+
+/* Colours */
 
 .square {
     border: 1px solid black;
@@ -98,10 +65,4 @@
 
 .movable {
     background-color: #E2F1AF;
-}
-
-.piece {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
 }

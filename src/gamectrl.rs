@@ -8,37 +8,68 @@ use hnefatafl::pieces::Side;
 use hnefatafl::play::Play;
 use hnefatafl::tiles::Tile;
 use std::collections::HashSet;
-
+use std::fmt::Display;
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{Duration, Instant};
 #[cfg(target_arch = "wasm32")]
 use web_time::{Duration, Instant};
 
+/// Information about a player
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub(crate) struct Player {
+    /// Player's name
+    pub(crate) name: String,
+    /// If this player is an AI, the amount of time it has to make a play. If the player is not an
+    /// AI, this should be `None`.
+    pub(crate) ai_play_time: Option<Duration>
+}
+
+impl Player {
+    /// Whether this player is an AI.
+    pub(crate) fn is_ai(&self) -> bool {
+        self.ai_play_time.is_some()
+    }
+}
+
+/// This struct contains certain information required to display the game and has methods to
+/// interact with the game.
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub(crate) struct GameController {
+    /// A copy of the ongoing game (*not* the "source of truth"), wrapped in a signal.
     pub(crate) game_copy: Signal<MediumBasicGame>,
+    /// The selected tile, if any, wrapped in a signal.
     pub(crate) selected: Signal<Option<Tile>>,
+    /// The set of tiles that are accessible from the selected tile, wrapped in a signal.
     pub(crate) movable: Signal<HashSet<Tile>>,
-    pub(crate) attacker_ai_time: Option<Duration>,
-    pub(crate) defender_ai_time: Option<Duration>,
-    pub(crate) last_move_time: Instant
+    /// Information about the attacking player.
+    pub(crate) attacker: Player,
+    /// Information about the defending player.
+    pub(crate) defender: Player,
+    /// The time the last move was made by either player.
+    pub(crate) last_move_time: Instant,
+    /// The name of the game.
+    pub(crate) game_name: String,
 }
 
 impl GameController {
     pub(crate) fn new(
         game: &MediumBasicGame,
-        attacker_ai_time: Option<Duration>,
-        defender_ai_time: Option<Duration>,
+        attacker: Player,
+        defender: Player,
+        game_name: String,
     ) -> Self {
         Self {
             game_copy: use_signal(|| game.clone()),
             selected: use_signal(|| None),
             movable: use_signal(HashSet::new),
-            attacker_ai_time, defender_ai_time,
-            last_move_time: Instant::now()
+            attacker, defender,
+            last_move_time: Instant::now(),
+            game_name
         }
     }
 
+    /// Handle the selection of a tile by the user, including, where necessary, processing a player
+    /// move.
     pub async fn handle_selection(&mut self, tile: Tile) {
         if self.is_ai_turn() {
             return
@@ -68,21 +99,27 @@ impl GameController {
         }
     }
 
-    pub fn is_ai_turn(&self) -> bool {
+    /// The player whose turn it is.
+    pub fn current_player(&self) -> &Player {
         match self.game_copy.read().state.side_to_play {
-            Side::Attacker => self.attacker_ai_time,
-            Side::Defender => self.defender_ai_time
-        }.is_some()
-    }
-    
-    pub fn ai_move_time(&self) -> Option<Duration> {
-        match self.game_copy.read().state.side_to_play {
-            Side::Attacker => self.attacker_ai_time,
-            Side::Defender => self.defender_ai_time
+            Side::Attacker => &self.attacker,
+            Side::Defender => &self.defender
         }
     }
 
-    pub fn time_since_last_move(&self) -> Duration {
+    /// Whether the current player is an AI.
+    pub fn is_ai_turn(&self) -> bool {
+        self.current_player().is_ai()
+    }
+
+    /// The amount of time the current player has to make a play, if the current player is an AI, or
+    /// `None` otherwise.
+    pub fn ai_play_time(&self) -> Option<Duration> {
+        self.current_player().ai_play_time
+    }
+
+    /// The amount of time since the last move was made.
+    pub fn time_since_last_play(&self) -> Duration {
         Instant::now() - self.last_move_time
     }
 }
