@@ -1,6 +1,6 @@
 //#![cfg(feature = "server")]
 
-use crate::backend::{do_play, new_game};
+use crate::backend::do_play;
 use dioxus::prelude::*;
 use hnefatafl::board::state::BoardState;
 use hnefatafl::game::MediumBasicGame;
@@ -9,10 +9,10 @@ use hnefatafl::play::Play;
 use hnefatafl::tiles::Tile;
 use std::collections::HashSet;
 
-#[cfg(target_arch = "wasm32")]
-use web_time::{Duration, Instant};
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{Duration, Instant};
+#[cfg(target_arch = "wasm32")]
+use web_time::{Duration, Instant};
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub(crate) struct GameController {
@@ -73,6 +73,13 @@ impl GameController {
             Side::Attacker => self.attacker_ai_time,
             Side::Defender => self.defender_ai_time
         }.is_some()
+    }
+    
+    pub fn ai_move_time(&self) -> Option<Duration> {
+        match self.game_copy.read().state.side_to_play {
+            Side::Attacker => self.attacker_ai_time,
+            Side::Defender => self.defender_ai_time
+        }
     }
 
     pub fn time_since_last_move(&self) -> Duration {

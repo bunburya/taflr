@@ -1,13 +1,15 @@
 use std::time::Duration;
 use hnefatafl::rules::Ruleset;
+use serde::{Deserialize, Serialize};
 use crate::backend::new_game;
 use crate::gamectrl::GameController;
 
+#[derive(Serialize, Deserialize, Clone)]
 pub(crate) struct GameSettings {
-    board: String,
-    rules: Ruleset,
-    attacker_ai_time: Option<Duration>,
-    defender_ai_time: Option<Duration>,
+    pub(crate) board: String,
+    pub(crate) rules: Ruleset,
+    pub(crate) attacker_ai_time: Option<Duration>,
+    pub(crate) defender_ai_time: Option<Duration>,
 }
 
 impl GameSettings {
@@ -25,14 +27,14 @@ impl GameSettings {
         }
     }
 
-    pub(crate) async fn init(&self) {
+    pub(crate) async fn init(&self) -> GameController {
         let game = new_game(
-            self.board.clone(),
             self.rules,
+            self.board.clone(),
             self.attacker_ai_time,
             self.defender_ai_time
         ).await.unwrap();
-        GameController::new()
+        GameController::new(&game, self.attacker_ai_time, self.defender_ai_time)
     }
 
 }

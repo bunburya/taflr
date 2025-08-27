@@ -21,16 +21,16 @@ async fn async_sleep(ms: u32) {
 }
 
 #[component]
-pub(crate) fn Game(controller: GameController) -> Element {
-    use_context_provider(|| controller);
+pub(crate) fn Game(game_ctrl: GameController) -> Element {
+    use_context_provider(|| game_ctrl);
     let _ = use_future(async move || {
         loop {
-            let mut ctrl = use_context::<GameController>();
-            if ctrl.is_ai_turn() && (ctrl.time_since_last_move() > ctrl.ai_move_time) {
+            let mut game_ctrl = use_context::<GameController>();
+            if game_ctrl.ai_move_time().is_some_and(|d| game_ctrl.time_since_last_move() > d) {
                 if let Some(vp) = poll_ai_play().await.unwrap() {
                     let g = do_play(vp.play).await.unwrap().unwrap();
-                    ctrl.game_copy.set(g);
-                    ctrl.last_move_time = Instant::now();
+                    game_ctrl.game_copy.set(g);
+                    game_ctrl.last_move_time = Instant::now();
                 }
             }
             async_sleep(500).await;

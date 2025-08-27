@@ -24,8 +24,51 @@
     grid-template-rows: repeat(13, 1fr);
 }
 
+/* Wrapper around the board that adds left and bottom gutters */
+.board-wrapper {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    background-color: #C1ABA6;
+}
+
+/* The wrapper layouts: 0.5 cell for gutter + N cells for board */
+.wrapper-size7 {
+    grid-template-columns: 0.5fr repeat(7, 1fr);
+    grid-template-rows: repeat(7, 1fr) 0.5fr;
+}
+
+.wrapper-size9 {
+    grid-template-columns: 0.5fr repeat(9, 1fr);
+    grid-template-rows: repeat(9, 1fr) 0.5fr;
+}
+
+.wrapper-size11 {
+    grid-template-columns: 0.5fr repeat(11, 1fr);
+    grid-template-rows: repeat(11, 1fr) 0.5fr;
+}
+
+.wrapper-size13 {
+    grid-template-columns: 0.5fr repeat(13, 1fr);
+    grid-template-rows: repeat(13, 1fr) 0.5fr;
+}
+
+/* Position the board inside the wrapper (skip the left column and bottom row) */
+.board {
+    grid-column: 2 / -1; /* from column 2 through the last board column */
+    grid-row: 1 / -2;    /* from row 1 up to the last board row (exclude bottom gutter) */
+}
+
+.label-cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.9em;
+    user-select: none;
+}
+
 .board .square {
-    display: flex;                /* only for centering content */
+    display: flex;                /* centre content */
     justify-content: center;
     align-items: center;
 }

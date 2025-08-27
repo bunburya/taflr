@@ -29,13 +29,16 @@ fn App() -> Element {
         Some(Duration::from_secs(5))
     );
     let resource = use_resource(|| async move {
-        new_game(&settings).await.ok()
+        new_game(
+            preset::rules::BRANDUBH,
+            preset::boards::BRANDUBH.to_owned(),
+            Some(Duration::from_secs(5)),
+            Some(Duration::from_secs(5))
+        ).await.unwrap()
     });
     match &*resource.read_unchecked() {
-        Some(Some(game)) => rsx! {
-            Game {
-                controller: GameController::new(game, true, true, Duration::from_secs(6))
-            }
+        Some(game) => rsx! {
+            Game { game_ctrl: GameController::new(game, settings.attacker_ai_time, settings.defender_ai_time) }
         },
         _ => rsx! { "Loading..." },
     }
