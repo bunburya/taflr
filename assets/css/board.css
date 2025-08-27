@@ -1,0 +1,64 @@
+.board {
+    display: grid;
+    width: 100%;
+    height: 100%;
+}
+
+.size7 {
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(7, 1fr);
+}
+
+.size9 {
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+}
+
+.size11 {
+    grid-template-columns: repeat(11, 1fr);
+    grid-template-rows: repeat(11, 1fr);
+}
+
+.size13 {
+    grid-template-columns: repeat(13, 1fr);
+    grid-template-rows: repeat(13, 1fr);
+}
+
+.board .square {
+    display: flex;                /* only for centering content */
+    justify-content: center;
+    align-items: center;
+}
+
+.board .cell img {
+    width: 80%;                   /* scale piece within cell */
+    height: 80%;
+    object-fit: contain;
+}
+
+.square {
+    border: 1px solid black;
+    background-color: #E3D888;
+}
+
+.throne {
+    background-color: #5A3A31;
+}
+
+.corner {
+    background-color: #84714F;
+}
+
+.selected {
+    background-color: #31231E;
+}
+
+.movable {
+    background-color: #E2F1AF;
+}
+
+.piece {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}

@@ -1,0 +1,2 @@
+The icons in this directory are public domain and are ultimately from https://openclipart.org, though I sourced them
+directly from https://github.com/vnermolaev/dioxus-chessboard as openclipart.org was down.
