@@ -4,8 +4,8 @@ use web_time::Instant;
 use std::time::{Duration, Instant};
 use dioxus::prelude::*;
 use crate::backend::{do_play, poll_ai_play};
-use crate::components::Board;
-use crate::components::game_info_panel::GameInfoPanel;
+use crate::components::game_screen::board::Board;
+use crate::components::game_screen::info_panel::InfoPanel;
 use crate::gamectrl::GameController;
 
 #[cfg(target_arch = "wasm32")]
@@ -21,6 +21,7 @@ async fn async_sleep(ms: u32) {
     sleep(Duration::from_millis(ms.into())).await;
 }
 
+/// 
 #[component]
 pub(crate) fn Game(game_ctrl: GameController) -> Element {
     use_context_provider(|| game_ctrl);
@@ -41,7 +42,7 @@ pub(crate) fn Game(game_ctrl: GameController) -> Element {
         div {
             class: "game-container",
             Board {}
-            GameInfoPanel {}
+            InfoPanel {}
         }
 
     }

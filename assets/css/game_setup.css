@@ -1,0 +1,142 @@
+/* Game Setup Container */
+.game-setup-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: #1a1a1a;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Title */
+.setup-title {
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 2.5rem;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+/* Setup Section */
+.setup-section {
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    color: #ffffff;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid #333;
+    padding-bottom: 0.5rem;
+}
+
+/* Form Elements */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    display: block;
+    color: #cccccc;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-select {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #2a2a2a;
+    color: #ffffff;
+    border: 1px solid #444;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.5rem;
+    background-color: #1a1a1a;
+    color: #ffffff;
+    border: 1px solid #444;
+    border-radius: 4px;
+}
+
+/* Players Section */
+.players-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* Player Configuration */
+.player-config {
+    padding: 1.5rem;
+    background-color: #2a2a2a;
+    border-radius: 8px;
+    border-width: 2px;
+    border-style: solid;
+}
+
+.player-config.attacker {
+    border-color: #8B0000;
+}
+
+.player-config.defender {
+    border-color: #006400;
+}
+
+.player-title {
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 1.25rem;
+}
+
+.player-config.attacker .player-title {
+    color: #ff6666;
+}
+
+.player-config.defender .player-title {
+    color: #66ff66;
+}
+
+/* Start Game Button */
+.start-game-btn {
+    width: 100%;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.25rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.start-game-btn:hover {
+    background: linear-gradient(135deg, #45a049, #3d8b40);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.start-game-btn:active {
+    transform: translateY(0);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .players-section {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .game-setup-container {
+        margin: 1rem;
+        padding: 1rem;
+    }
+
+    .setup-title {
+        font-size: 2rem;
+    }
+}

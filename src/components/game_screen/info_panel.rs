@@ -12,13 +12,14 @@ fn display_player(player: &Player, side: Side) -> String {
     )
 }
 
+/// Display the history of plays (moves) in the current game.
 #[component]
 pub fn PlayHistory(plays: Vec<PlayRecord>) -> Element {
     // Group plays into pairs (attacker play, defender play)
     let play_pairs: Vec<(Option<&PlayRecord>, Option<&PlayRecord>)> = plays
         .chunks(2)
         .map(|chunk| {
-            let attacker_play = chunk.get(0);
+            let attacker_play = chunk.first();
             let defender_play = chunk.get(1);
             (attacker_play, defender_play)
         })
@@ -61,8 +62,9 @@ pub fn PlayHistory(plays: Vec<PlayRecord>) -> Element {
     }
 }
 
+/// Display information about the current game.
 #[component]
-pub(crate) fn GameInfoPanel() -> Element {
+pub(crate) fn InfoPanel() -> Element {
     let game_ctrl = use_context::<GameController>();
     let play_history = game_ctrl.game_copy.read().play_history.clone();
     let side_to_play = game_ctrl.game_copy.read().state.side_to_play;

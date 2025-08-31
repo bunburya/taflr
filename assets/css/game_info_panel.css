@@ -39,11 +39,3 @@
     font-weight: bold;
     min-width: 40px;
 }
-
-.attacker-play {
-    color: #d63384; /* or whatever color represents attacker */
-}
-
-.defender-play {
-    color: #0d6efd; /* or whatever color represents defender */
-}

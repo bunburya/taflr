@@ -2,18 +2,19 @@ mod aictrl;
 
 use std::ops::Deref;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 use dioxus::fullstack::once_cell::sync::Lazy;
 use dioxus::prelude::*;
 use hnefatafl::board::state::{BoardState, MediumBasicBoardState};
 use hnefatafl::error::PlayInvalid;
 use hnefatafl::game::{Game, GameStatus, MediumBasicGame};
 use hnefatafl::play::{ValidPlay, Play};
-use hnefatafl::rules::Ruleset;
-use crate::backend::aictrl::{AiController, AI_CTRL};
+use crate::backend::aictrl::AiController;
+use crate::config::GameSettings;
 
-struct GlobalState<T: BoardState> {
+#[derive(Debug)]
+pub(crate) struct GlobalState<T: BoardState> {
     game: Game<T>,
+    settings: GameSettings,
     ai_ctrl: AiController<T>
 }
 
@@ -23,13 +24,17 @@ static GLOBAL_STATE: Lazy<Arc<Mutex<Option<GlobalState<MediumBasicBoardState>>>>
 
 pub(crate) fn init_global_state(
     game: MediumBasicGame,
-    attacker_ai_time: Option<Duration>,
-    defender_ai_time: Option<Duration>
+    settings: GameSettings
 ) {
-    let mut ai_ctrl = AiController::new(&game, attacker_ai_time, defender_ai_time);
+    let mut ai_ctrl = AiController::new(
+        &game,
+        settings.attacker.ai_play_time,
+        settings.defender.ai_play_time
+    );
     ai_ctrl.request_ai_play(&game);
     *GLOBAL_STATE.lock().unwrap() = Some(GlobalState {
         game,
+        settings,
         ai_ctrl
     });
 }
@@ -37,13 +42,10 @@ pub(crate) fn init_global_state(
 
 #[server]
 pub(crate) async fn new_game(
-    rules: Ruleset,
-    board: String,
-    attacker_ai_time: Option<Duration>,
-    defender_ai_time: Option<Duration>
+    settings: GameSettings
 ) -> Result<MediumBasicGame, ServerFnError> {
-    let game = MediumBasicGame::new(rules, board.as_str()).unwrap();
-    init_global_state(game.clone(), attacker_ai_time, defender_ai_time);
+    let game = MediumBasicGame::new(settings.rules, settings.board.as_str()).unwrap();
+    init_global_state(game.clone(), settings);
     Ok(game)
 }
 
@@ -79,5 +81,13 @@ pub(crate) async fn poll_ai_play() -> Result<Option<ValidPlay>, ServerFnError> {
         Ok(gs.ai_ctrl.receive_ai_play(gs.game.state.side_to_play))
     } else {
         Ok(None)
+    }
+}
+
+#[server]
+pub(crate) async fn get_game_and_settings() -> Result<Option<(MediumBasicGame, GameSettings)>, ServerFnError> {
+    match GLOBAL_STATE.lock().unwrap().as_ref() {
+        Some(gs) => Ok(Some((gs.game.clone(), gs.settings.clone()))),
+        None => Ok(None)
     }
 }

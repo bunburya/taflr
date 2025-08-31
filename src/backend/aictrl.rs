@@ -1,17 +1,12 @@
 use crate::ai::{Ai, BasicAi};
-use dioxus::fullstack::once_cell::sync::Lazy;
-use hnefatafl::board::state::{BoardState, MediumBasicBoardState};
+use hnefatafl::board::state::BoardState;
 use hnefatafl::game::state::GameState;
-use hnefatafl::game::{Game, MediumBasicGame};
+use hnefatafl::game::Game;
 use hnefatafl::pieces::Side;
 use hnefatafl::play::ValidPlay;
-use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread;
 use std::time::Duration;
 
-pub(crate) static AI_CTRL: Lazy<Arc<Mutex<AiController<MediumBasicBoardState>>>> = Lazy::new(||
-    Arc::new(Mutex::new(AiController::default()))
-);
 
 #[derive(Debug)]
 enum Message<T: BoardState> {

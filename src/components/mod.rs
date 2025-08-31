@@ -1,9 +1,3 @@
-mod board;
-mod piece;
-mod icons;
-mod square;
-pub(crate) mod game;
-mod game_info_panel;
+pub(crate) mod game_screen;
 
-pub(crate) use piece::PieceIcon;
-pub(crate) use board::Board;
+pub(crate) use game_screen::setup::GameSetupScreen;

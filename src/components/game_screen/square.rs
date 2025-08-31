@@ -2,7 +2,7 @@ use std::ops::Deref;
 use dioxus::prelude::*;
 use hnefatafl::board::state::BoardState;
 use hnefatafl::tiles::Tile;
-use crate::components::PieceIcon;
+use crate::components::game_screen::piece::PieceIcon;
 use crate::gamectrl::GameController;
 
 #[component]

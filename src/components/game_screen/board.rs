@@ -1,10 +1,8 @@
 use dioxus::prelude::*;
 use hnefatafl::board::state::BoardState;
 use hnefatafl::tiles::Tile;
-use crate::components::square::Square;
+use crate::components::game_screen::square::Square;
 use crate::gamectrl::GameController;
-
-const BOARD_STYLE: Asset = asset!("assets/css/board.css");
 
 #[component]
 pub(crate) fn Board() -> Element {
@@ -12,7 +10,7 @@ pub(crate) fn Board() -> Element {
     let side_len = board_state.side_len();
 
     rsx! {
-        document::Link { rel: "stylesheet", href: BOARD_STYLE }
+        document::Link { rel: "stylesheet", href: asset!("assets/css/board.css") }
         div {
             class: "board-frame",
             style: format!("--board-size: {}", side_len),
