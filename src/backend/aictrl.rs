@@ -82,13 +82,21 @@ impl<T: BoardState + Send + 'static> AiController<T> {
         }
     }
 
-    pub fn receive_ai_play(&mut self, side_to_play: Side) -> Option<ValidPlay> {
+    pub fn receive_ai_play(
+        &mut self,
+        side_to_play: Side,
+        current_state: GameState<T>
+    ) -> Option<ValidPlay> {
         if let Some(ai_chan) = self.get_ai_channel(side_to_play) {
-            if let Message::Response(vp, _, _) = ai_chan.receiver.recv()
-                .expect("Failed to receive response") {
-                Some(vp)
-            } else {
-                None
+            loop {
+                if let Message::Response(vp, state, _) = ai_chan.receiver.recv()
+                    .expect("Failed to receive response") {
+                    if state == current_state {
+                        return Some(vp)
+                    }
+                } else {
+                   return None
+                }
             }
         } else {
             None

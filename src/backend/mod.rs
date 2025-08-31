@@ -8,8 +8,15 @@ use hnefatafl::board::state::{BoardState, MediumBasicBoardState};
 use hnefatafl::error::PlayInvalid;
 use hnefatafl::game::{Game, GameStatus, MediumBasicGame};
 use hnefatafl::play::{ValidPlay, Play};
+use serde::{Deserialize, Serialize};
 use crate::backend::aictrl::AiController;
 use crate::config::GameSettings;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum PlayError {
+    NoGame,
+    Invalid(PlayInvalid),
+}
 
 #[derive(Debug)]
 pub(crate) struct GlobalState<T: BoardState> {
@@ -59,7 +66,7 @@ pub(crate) async fn get_game_clone() -> Result<Option<MediumBasicGame>, ServerFn
 }
 
 #[server]
-pub(crate) async fn do_play(play: Play) -> Result<Result<MediumBasicGame, PlayInvalid>, ServerFnError> {
+pub(crate) async fn do_play(play: Play) -> Result<Result<MediumBasicGame, PlayError>, ServerFnError> {
     if let Some(gs) = GLOBAL_STATE.lock().unwrap().as_mut() {
         match gs.game.do_play(play) {
             Ok(game_status) => {
@@ -67,18 +74,18 @@ pub(crate) async fn do_play(play: Play) -> Result<Result<MediumBasicGame, PlayIn
                     gs.ai_ctrl.request_ai_play(&gs.game);
                 }
             },
-            Err(e) => { return Ok(Err(e)); }
+            Err(e) => { return Ok(Err(PlayError::Invalid(e))); }
         }
         Ok(Ok(gs.game.clone()))
     } else {
-        Ok(Err(PlayInvalid::GameOver))
+        Ok(Err(PlayError::NoGame))
     }
 }
 
 #[server]
 pub(crate) async fn poll_ai_play() -> Result<Option<ValidPlay>, ServerFnError> {
     if let Some(gs) = GLOBAL_STATE.lock().unwrap().as_mut() {
-        Ok(gs.ai_ctrl.receive_ai_play(gs.game.state.side_to_play))
+        Ok(gs.ai_ctrl.receive_ai_play(gs.game.state.side_to_play, gs.game.state))
     } else {
         Ok(None)
     }
@@ -89,5 +96,22 @@ pub(crate) async fn get_game_and_settings() -> Result<Option<(MediumBasicGame, G
     match GLOBAL_STATE.lock().unwrap().as_ref() {
         Some(gs) => Ok(Some((gs.game.clone(), gs.settings.clone()))),
         None => Ok(None)
+    }
+}
+
+#[server]
+pub(crate) async fn clear_game() -> Result<(), ServerFnError> {
+    *GLOBAL_STATE.lock().unwrap() = None;
+    Ok(())
+}
+
+#[server]
+pub(crate) async fn undo_play() -> Result<Result<MediumBasicGame, PlayError>, ServerFnError> {
+    if let Some(gs) = GLOBAL_STATE.lock().unwrap().as_mut() {
+        gs.game.undo_last_play();
+        gs.ai_ctrl.request_ai_play(&gs.game);
+        Ok(Ok(gs.game.clone()))
+    } else {
+        Ok(Err(PlayError::NoGame))
     }
 }

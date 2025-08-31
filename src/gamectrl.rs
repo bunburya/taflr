@@ -1,6 +1,6 @@
 //#![cfg(feature = "server")]
 
-use crate::backend::do_play;
+use crate::backend::{do_play, undo_play};
 use dioxus::prelude::*;
 use hnefatafl::board::state::BoardState;
 use hnefatafl::game::MediumBasicGame;
@@ -45,29 +45,13 @@ pub(crate) struct GameController {
     pub(crate) attacker: Player,
     /// Information about the defending player.
     pub(crate) defender: Player,
-    /// The time the last move was made by either player.
-    pub(crate) last_move_time: Instant,
+    /// The time the last move was made by either player, wrapped in a signal.
+    pub(crate) last_move_time: Signal<Instant>,
     /// The name of the game.
     pub(crate) game_name: String,
 }
 
 impl GameController {
-    pub(crate) fn new(
-        game: &MediumBasicGame,
-        attacker: Player,
-        defender: Player,
-        game_name: String,
-    ) -> Self {
-        Self {
-            game_copy: use_signal(|| game.clone()),
-            selected: use_signal(|| None),
-            movable: use_signal(HashSet::new),
-            attacker, defender,
-            last_move_time: Instant::now(),
-            game_name
-        }
-    }
-
     /// Handle the selection of a tile by the user, including, where necessary, processing a player
     /// move.
     pub async fn handle_selection(&mut self, tile: Tile) {
@@ -78,12 +62,11 @@ impl GameController {
             && self.movable.read().contains(&tile) {
             // unwrap safe because we have just checked
             let from_tile = self.selected.read().unwrap();
-            if let Ok(game) = do_play(Play::from_tiles(from_tile, tile).unwrap())
-                .await.unwrap() {
+            if let Ok(game) = do_play(Play::from_tiles(from_tile, tile).unwrap()).await.unwrap() {
                 self.game_copy.set(game);
                 self.selected.set(None);
                 self.movable.set(HashSet::new());
-                self.last_move_time = Instant::now();
+                self.last_move_time.set(Instant::now());
             }
         } else {
             let game = self.game_copy.read();
@@ -120,6 +103,15 @@ impl GameController {
 
     /// The amount of time since the last move was made.
     pub fn time_since_last_play(&self) -> Duration {
-        Instant::now() - self.last_move_time
+        Instant::now() - *self.last_move_time.read()
+    }
+
+    pub async fn undo_last_play(&mut self) {
+        if let Ok(Ok(g)) = undo_play().await {
+            self.game_copy.set(g);
+            self.selected.set(None);
+            self.movable.set(HashSet::new());
+            self.last_move_time.set(Instant::now());
+        }
     }
 }

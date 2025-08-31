@@ -4,7 +4,7 @@ use std::time::Duration;
 use dioxus::prelude::*;
 use hnefatafl::preset;
 use crate::backend::{get_game_and_settings, new_game};
-use crate::components::game_screen::GAME_SETTINGS;
+use crate::components::game_screen::GAME_CTRL;
 use crate::config::GameSettings;
 use crate::gamectrl::Player;
 
@@ -48,11 +48,16 @@ pub(crate) fn GameSetupScreen() -> Element {
         let settings = GameSettings {
             rules: *ruleset.read().deref(),
             board: board.read().deref().to_string(),
-            variant_name: variant.read().deref().to_string(),
-            attacker, defender
+            name: variant.read().deref().to_string(),
+            attacker: attacker.clone(),
+            defender: defender.clone()
         };
+        // Ask the server to create a new game with the given settings
         new_game(settings).await;
-        *GAME_SETTINGS.write() = get_game_and_settings().await.unwrap();
+        // Read the created game and settings back from the server
+        let (game, settings) = get_game_and_settings().await.unwrap().unwrap();
+        // Store the game data and settings client-side
+        *GAME_CTRL.write() = Some((game, settings));
     };
 
     rsx! {

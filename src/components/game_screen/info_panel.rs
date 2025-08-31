@@ -14,7 +14,7 @@ fn display_player(player: &Player, side: Side) -> String {
 
 /// Display the history of plays (moves) in the current game.
 #[component]
-pub fn PlayHistory(plays: Vec<PlayRecord>) -> Element {
+fn PlayHistory(plays: Vec<PlayRecord>) -> Element {
     // Group plays into pairs (attacker play, defender play)
     let play_pairs: Vec<(Option<&PlayRecord>, Option<&PlayRecord>)> = plays
         .chunks(2)

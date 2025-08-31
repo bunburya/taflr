@@ -453,10 +453,7 @@ impl BasicAi {
             // Not really sure why we need to negate maximize here but the algo definitely
             // performs better when we do...
             let (score, _) = self.minimax(play, state, depth, !maximize, i32::MIN, i32::MAX, stats);
-            if maximize && (score > best_score) {
-                best_score = score;
-                best_play = Some(play);
-            } else if (!maximize) && (score < best_score) {
+            if (maximize && (score > best_score)) || (!maximize && (score < best_score)) {
                 best_score = score;
                 best_play = Some(play);
             }
