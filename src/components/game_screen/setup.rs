@@ -61,7 +61,6 @@ pub(crate) fn GameSetupScreen() -> Element {
     };
 
     rsx! {
-        document::Link { rel: "stylesheet", href: asset!("assets/css/game_setup.css") }
         div {
             class: "game-setup-container",
 

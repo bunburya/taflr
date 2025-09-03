@@ -1,4 +1,6 @@
 .side-pane {
     display: flex;
     flex-direction: column;
+    width: 30%;
+    max-width: 30%;
 }

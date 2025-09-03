@@ -10,7 +10,6 @@ pub(crate) fn Board() -> Element {
     let side_len = board_state.side_len();
 
     rsx! {
-        document::Link { rel: "stylesheet", href: asset!("assets/css/board.css") }
         div {
             class: "board-frame",
             style: format!("--board-size: {}", side_len),
