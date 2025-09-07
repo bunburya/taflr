@@ -1,12 +1,13 @@
 use dioxus::prelude::*;
-use hnefatafl::board::state::BoardState;
+use hnefatafl::board::state::{BoardState, MediumBasicBoardState};
 use hnefatafl::tiles::Tile;
+use crate::aictrl::AiRequest;
 use crate::components::game_screen::square::Square;
 use crate::gamectrl::GameController;
 
 #[component]
 pub(crate) fn Board() -> Element {
-    let board_state = use_context::<GameController>().game_copy.read().state.board;
+    let board_state = use_context::<GameController>().game.read().state.board;
     let side_len = board_state.side_len();
 
     rsx! {

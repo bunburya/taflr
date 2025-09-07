@@ -1,8 +1,7 @@
 use crate::gamectrl::Player;
 use hnefatafl::rules::Ruleset;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 pub struct GameSettings {
     pub(crate) rules: Ruleset,
     pub(crate) board: String,

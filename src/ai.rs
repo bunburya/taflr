@@ -1,4 +1,4 @@
-use crate::ai::AiError::{NoPlayAvailable, NotMyTurn};
+use crate::ai::AiError::NoPlayAvailable;
 use hnefatafl::board::state::BoardState;
 use hnefatafl::game::logic::GameLogic;
 use hnefatafl::game::state::GameState;
@@ -7,15 +7,13 @@ use hnefatafl::game::GameStatus::{Ongoing, Over};
 use hnefatafl::pieces;
 use hnefatafl::pieces::PieceType::{King, Soldier};
 use hnefatafl::pieces::Side::{Attacker, Defender};
-use hnefatafl::pieces::{Piece, Side, KING};
+use hnefatafl::pieces::{Piece, KING};
 use hnefatafl::play::ValidPlay;
 use hnefatafl::tiles::Coords;
 use rand::{thread_rng, Rng};
 use std::cmp::min;
 use std::time::Duration;
 use std::time::Instant;
-
-
 
 #[derive(Default)]
 pub(crate) struct SearchStats {
@@ -28,6 +26,7 @@ pub(crate) struct SearchStats {
     max_depth: u8
 }
 
+#[derive(Debug)]
 pub(crate) enum AiError {
     NoPlayAvailable,
     NotMyTurn
@@ -178,24 +177,25 @@ impl TranspositionTable {
 }
 
 pub trait Ai {
-    fn next_play<T: BoardState>(&mut self, game_state: &GameState<T>) -> Result<(ValidPlay, Vec<String>), AiError>;
+    fn next_play<T: BoardState>(
+        &mut self,
+        game_state: &GameState<T>,
+        time_to_play: Duration
+    ) -> Result<(ValidPlay, Vec<String>), AiError>;
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct BasicAi {
-    side: Side,
     logic: GameLogic,
     zt: ZobristTable,
-    tt: TranspositionTable,
-    time_to_play: Duration
+    tt: TranspositionTable
 }
 
 impl BasicAi {
     
-    pub(crate) fn new(logic: GameLogic, side: Side, time_to_play: Duration) -> Self {
+    pub(crate) fn new(logic: GameLogic) -> Self {
         let mut rng = thread_rng();
         Self {
-            side,
             logic,
             zt: ZobristTable::new(logic.board_geo.side_len, &mut rng),
             // Smaller capacity on WASM
@@ -203,7 +203,6 @@ impl BasicAi {
             tt: TranspositionTable::new(128),
             #[cfg(not(target_arch = "wasm32"))]
             tt: TranspositionTable::new(512),
-            time_to_play
         }
     }
     
@@ -466,7 +465,8 @@ impl BasicAi {
         &mut self,
         state: GameState<T>,
         maximize: bool,
-        stats: &mut SearchStats
+        stats: &mut SearchStats,
+        time_to_play: Duration
     ) -> (Option<ValidPlay>, i32) {
         self.tt.new_search();
         let mut depth = 1;
@@ -479,7 +479,7 @@ impl BasicAi {
                 state,
                 maximize,
                 stats,
-                start_time + self.time_to_play
+                start_time + time_to_play
             );
             if let Some(p) = play {
                 if !out_of_time {
@@ -504,16 +504,15 @@ impl BasicAi {
 }
 
 impl Ai for BasicAi {
-    fn next_play<T: BoardState>(&mut self, game_state: &GameState<T>) -> Result<(ValidPlay, Vec<String>), AiError> {
-        if game_state.side_to_play != self.side {
-            return Err(NotMyTurn)
-        }
+    fn next_play<T: BoardState>(&mut self, game_state: &GameState<T>, time_to_play: Duration) -> Result<(ValidPlay, Vec<String>), AiError> {
         let mut stats = SearchStats::default();
         let start_time = Instant::now();
+        let side = game_state.side_to_play;
         let (best_play, best_score) = self.iddfs(
             *game_state, 
-            self.side == Attacker,
-            &mut stats
+            side == Attacker,
+            &mut stats,
+            time_to_play
         );
         
         let log_lines: Vec<String> = vec![

@@ -17,7 +17,7 @@ fn display_player(player: &Player, side: Side) -> String {
 fn PlayHistory(plays: Vec<PlayRecord>) -> Element {
 
     let game_ctrl = use_context::<GameController>();
-    let starting_side = game_ctrl.game_copy.read().logic.rules.starting_side;
+    let starting_side = game_ctrl.game.read().logic.rules.starting_side;
     let (name1, name2) = if starting_side == Side::Attacker {
         (game_ctrl.attacker.name, game_ctrl.defender.name)
     } else {
@@ -72,8 +72,8 @@ fn PlayHistory(plays: Vec<PlayRecord>) -> Element {
 #[component]
 pub(crate) fn InfoPanel() -> Element {
     let game_ctrl = use_context::<GameController>();
-    let play_history = game_ctrl.game_copy.read().play_history.clone();
-    let side_to_play = game_ctrl.game_copy.read().state.side_to_play;
+    let play_history = game_ctrl.game.read().play_history.clone();
+    let side_to_play = game_ctrl.game.read().state.side_to_play;
     let mut att_cls = vec!["player-name"];
     let mut def_cls = vec!["player-name"];
     if side_to_play == Side::Attacker {

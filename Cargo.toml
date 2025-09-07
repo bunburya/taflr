@@ -7,11 +7,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dioxus = { version = "0.6.3", features = ["asset", "fullstack"] }
+dioxus = { version = "0.6.3", features = ["asset"] }
 hnefatafl = { path = "../hnefatafl", features = ["serde"] }
 rand = "0.8.5"
-serde = { version = "1.0.219", features = ["derive"] }
 async-std = "1.13.2"
+tokio = {  version = "1.47.1", features = ["sync"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2", features = ["js"] }
@@ -19,11 +19,10 @@ gloo-timers = "0.3.0"
 web-time = "1.1.0"
 
 [features]
-default = []
+default = ["web"]
 web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
-server = ["dioxus/server"]
 
 [profile]
 
@@ -31,8 +30,8 @@ server = ["dioxus/server"]
 inherits = "dev"
 opt-level = 1
 
-[profile.server-dev]
+[profile.android-dev]
 inherits = "dev"
 
-[profile.android-dev]
+[profile.server-dev]
 inherits = "dev"

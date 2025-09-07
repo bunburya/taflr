@@ -1,15 +1,14 @@
-use std::collections::HashSet;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{Duration, Instant};
+use async_std::prelude::StreamExt;
+use dioxus::logger::tracing::Instrument;
 use dioxus::prelude::*;
-use hnefatafl::game::MediumBasicGame;
-use crate::backend::{do_play, poll_ai_play};
+use hnefatafl::board::state::MediumBasicBoardState;
+use crate::ai::BasicAi;
+use crate::aictrl::{compute_ai_play, AiRequest, AI};
 use crate::components::game_screen::board::Board;
-use crate::components::game_screen::ctrl_panel::ControlPanel;
-use crate::components::game_screen::GAME_CTRL;
-use crate::components::game_screen::info_panel::InfoPanel;
 use crate::components::game_screen::side_pane::SidePane;
 use crate::config::GameSettings;
 use crate::gamectrl::GameController;
@@ -28,37 +27,40 @@ async fn async_sleep(ms: u32) {
 }
 
 #[component]
-pub(crate) fn Game(game: MediumBasicGame, settings: GameSettings) -> Element {
-    let game_copy = use_signal(|| game.clone());
-    let selected = use_signal(|| None);
-    let movable = use_signal(HashSet::new);
-    let last_move_time = use_signal(Instant::now);
+pub(crate) fn Game(settings: GameSettings) -> Element {
+    let game_ctrl = GameController::new(settings);
 
-    let game_ctrl = GameController {
-        game_copy,
-        selected,
-        movable,
-        attacker: settings.attacker,
-        defender: settings.defender,
-        last_move_time,
-        game_name: settings.name,
-    };
+    use_context_provider(move || game_ctrl);
 
-    use_context_provider(|| game_ctrl);
-
-    let _ = use_future(async move || {
-        loop {
+    let ai_coroutine = use_coroutine(|mut rx: UnboundedReceiver<AiRequest<MediumBasicBoardState>>| async move {
+        while let Some(request) = rx.next().await {
             let mut game_ctrl = use_context::<GameController>();
-            if game_ctrl.ai_play_time().is_some_and(|d| game_ctrl.time_since_last_play() > d) {
-                if let Some(vp) = poll_ai_play().await.unwrap() {
-                    let g = do_play(vp.play).await.unwrap().unwrap();
-                    game_ctrl.game_copy.set(g);
-                    game_ctrl.last_move_time.set(Instant::now()); // Now using Signal
-                }
+
+            // Compute AI move in background
+            let response = compute_ai_play(request).await;
+            match response {
+                Ok(resp) => {
+                    if let Some(ai_move) = game_ctrl.handle_ai_response(resp) {
+                        game_ctrl.apply_play(ai_move.play).expect("Invalid AI play");
+                    }
+                },
+                Err(e) => println!("Error: {}", e)
             }
-            async_sleep(500).await;
         }
     });
+
+    use_context_provider(|| ai_coroutine);
+
+    use_effect(|| {
+        let game_ctrl = use_context::<GameController>();
+        if let Some(time_to_play) = game_ctrl.current_player().ai_play_time {
+            use_context::<Coroutine<AiRequest<MediumBasicBoardState>>>().send(AiRequest {
+                game_state: game_ctrl.game.read().state,
+                time_to_play
+            });
+        }
+    });
+
     rsx! {
         div {
             class: "game-container",

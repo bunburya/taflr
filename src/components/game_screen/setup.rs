@@ -3,8 +3,7 @@ use std::ops::Deref;
 use std::time::Duration;
 use dioxus::prelude::*;
 use hnefatafl::preset;
-use crate::backend::{get_game_and_settings, new_game};
-use crate::components::game_screen::GAME_CTRL;
+use crate::components::game_screen::GAME_SETTINGS;
 use crate::config::GameSettings;
 use crate::gamectrl::Player;
 
@@ -16,6 +15,7 @@ enum PlayerType {
 
 #[component]
 pub(crate) fn GameSetupScreen() -> Element {
+    println!("Rendering GameSetupScreen");
     let mut ruleset = use_signal(|| preset::rules::COPENHAGEN);
     let mut board = use_signal(|| preset::boards::COPENHAGEN);
     let mut variant = use_signal(|| String::from("Copenhagen"));
@@ -25,7 +25,7 @@ pub(crate) fn GameSetupScreen() -> Element {
     let mut attacker_ai_time = use_signal(|| 5u32);
 
     let mut defender_name = use_signal(|| "Defender".to_string());
-    let mut defender_type = use_signal(|| PlayerType::AI);
+    let mut defender_type = use_signal(|| PlayerType::Human);
     let mut defender_ai_time = use_signal(|| 5u32);
 
     let start_game = move |_: MouseEvent| async move {
@@ -49,15 +49,13 @@ pub(crate) fn GameSetupScreen() -> Element {
             rules: *ruleset.read().deref(),
             board: board.read().deref().to_string(),
             name: variant.read().deref().to_string(),
-            attacker: attacker.clone(),
-            defender: defender.clone()
+            attacker,
+            defender
         };
-        // Ask the server to create a new game with the given settings
-        new_game(settings).await;
-        // Read the created game and settings back from the server
-        let (game, settings) = get_game_and_settings().await.unwrap().unwrap();
-        // Store the game data and settings client-side
-        *GAME_CTRL.write() = Some((game, settings));
+        use_effect(move || {
+            *GAME_SETTINGS.write() = Some(settings.clone());
+        });
+
     };
 
     rsx! {
@@ -102,8 +100,10 @@ pub(crate) fn GameSetupScreen() -> Element {
                                 "Copenhagen" => preset::boards::COPENHAGEN,
                                 _ => unreachable!()
                             };
+                            println!("Writing board");
                             board.set(sel_board);
                             variant.set(sel_str);
+                            println!("Wrote board");
                         },
                         option { value: "Copenhagen", "Copenhagen" }
                         option { value: "Brandubh", "Brandubh" }

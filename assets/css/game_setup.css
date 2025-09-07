@@ -12,7 +12,7 @@
     text-align: center;
     margin-bottom: 2rem;
     font-size: 2.5rem;
-    color: #ffffff;
+    color: var(--ivory);
     font-weight: bold;
 }
 
@@ -22,7 +22,7 @@
 }
 
 .section-title {
-    color: #ffffff;
+    color: var(--ivory);
     font-size: 1.5rem;
     margin-bottom: 1rem;
     border-bottom: 2px solid #333;
@@ -44,9 +44,9 @@
 .form-select {
     width: 100%;
     padding: 0.75rem;
-    background-color: #2a2a2a;
-    color: #ffffff;
-    border: 1px solid #444;
+    background-color: var(--ivory);
+    color: var(--charcoal);
+    border: 1px solid var(--charcoal);
     border-radius: 6px;
     font-size: 1rem;
 }
@@ -54,9 +54,9 @@
 .form-input {
     width: 100%;
     padding: 0.5rem;
-    background-color: #1a1a1a;
-    color: #ffffff;
-    border: 1px solid #444;
+    background-color: var(--charcoal);
+    color: var(--ivory);
+    border: 1px solid var(--charcoal);
     border-radius: 4px;
 }
 
@@ -77,26 +77,12 @@
     border-style: solid;
 }
 
-.player-config.attacker {
-    border-color: #8B0000;
-}
-
-.player-config.defender {
-    border-color: #006400;
-}
 
 .player-title {
     margin-bottom: 1rem;
     text-align: center;
     font-size: 1.25rem;
-}
-
-.player-config.attacker .player-title {
-    color: #ff6666;
-}
-
-.player-config.defender .player-title {
-    color: #66ff66;
+    color: var(--ivory);
 }
 
 /* Start Game Button */
