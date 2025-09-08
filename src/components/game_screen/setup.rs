@@ -7,6 +7,22 @@ use crate::components::game_screen::GAME_SETTINGS;
 use crate::config::GameSettings;
 use crate::gamectrl::Player;
 
+static NAMES: [(&str, &str); 5] = [
+    ("Queen Medb", "Cú Chulainn"),
+    ("Ragnar Lodbrok", "Charles the Bald"),
+    ("Ubba", "Ælla"),
+    ("Brian Boru", "Sigtrygg Silkbeard"),
+    ("Brennus", "Sulpicius")
+];
+
+fn random_names() -> (&'static str, &'static str) {
+    let time = std::time::SystemTime::now();
+    let time = time.duration_since(std::time::UNIX_EPOCH).unwrap();
+    let time = time.as_secs() as usize;
+    let idx = time % NAMES.len();
+    NAMES[idx]
+}
+
 #[derive(PartialEq)]
 enum PlayerType {
     Human,
@@ -20,11 +36,13 @@ pub(crate) fn GameSetupScreen() -> Element {
     let mut board = use_signal(|| preset::boards::COPENHAGEN);
     let mut variant = use_signal(|| String::from("Copenhagen"));
 
-    let mut attacker_name = use_signal(|| "Attacker".to_string());
+    let (att_name, def_name) = random_names();
+
+    let mut attacker_name = use_signal(|| att_name.to_string());
     let mut attacker_type = use_signal(|| PlayerType::Human);
     let mut attacker_ai_time = use_signal(|| 5u32);
 
-    let mut defender_name = use_signal(|| "Defender".to_string());
+    let mut defender_name = use_signal(|| def_name.to_string());
     let mut defender_type = use_signal(|| PlayerType::Human);
     let mut defender_ai_time = use_signal(|| 5u32);
 

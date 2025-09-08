@@ -71,7 +71,7 @@
 /* Player Configuration */
 .player-config {
     padding: 1.5rem;
-    background-color: #2a2a2a;
+    background-color: var(--primary-dark);
     border-radius: 8px;
     border-width: 2px;
     border-style: solid;
@@ -89,7 +89,7 @@
 .start-game-btn {
     width: 100%;
     padding: 1rem 2rem;
-    background: linear-gradient(135deg, #4CAF50, #45a049);
+    background: var(--green);
     color: white;
     border: none;
     border-radius: 8px;
@@ -100,9 +100,9 @@
 }
 
 .start-game-btn:hover {
-    background: linear-gradient(135deg, #45a049, #3d8b40);
+    background: var(--light-green);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    box-shadow: 0 4px 12px var(--shadow);
 }
 
 .start-game-btn:active {

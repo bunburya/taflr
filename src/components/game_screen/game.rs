@@ -9,7 +9,7 @@ use hnefatafl::board::state::MediumBasicBoardState;
 use crate::ai::BasicAi;
 use crate::aictrl::{compute_ai_play, AiRequest, AI};
 use crate::components::game_screen::board::Board;
-use crate::components::game_screen::side_pane::SidePane;
+use crate::components::game_screen::ctrl_panel::ControlPanel;
 use crate::config::GameSettings;
 use crate::gamectrl::GameController;
 
@@ -65,7 +65,7 @@ pub(crate) fn Game(settings: GameSettings) -> Element {
         div {
             class: "game-container",
             Board {}
-            SidePane {}
+            ControlPanel {}
         }
 
     }

@@ -20,10 +20,8 @@ fn Style() -> Element {
     rsx! {
         document::Stylesheet { href: asset!("/assets/css/variables.css") }
         document::Stylesheet { href: asset!("/assets/css/main.css") }
-        document::Stylesheet { href: asset!("/assets/css/board.css") }
+        document::Stylesheet { href: asset!("/assets/css/game.css") }
         document::Stylesheet { href: asset!("/assets/css/game_setup.css") }
-        document::Stylesheet { href: asset!("/assets/css/game_info_panel.css") }
-        document::Stylesheet { href: asset!("/assets/css/game_side_pane.css") }
     }
 }
 
