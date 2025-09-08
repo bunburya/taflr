@@ -1,8 +1,8 @@
-//#![cfg(feature = "server")]
-
 use crate::ai::{Ai, BasicAi};
-use crate::aictrl::{AiRequest, AiResponse, AI};
+use crate::aictrl::{AiResponse, AI};
 use crate::config::GameSettings;
+use crate::db;
+use crate::db::add_to_db;
 use dioxus::prelude::*;
 use hnefatafl::board::state::{BoardState, MediumBasicBoardState};
 use hnefatafl::error::PlayInvalid;
@@ -52,8 +52,8 @@ pub(crate) struct GameController {
     pub(crate) last_move_time: Signal<Instant>,
     /// The name of the game.
     pub(crate) game_name: String,
-    /// Whether this controller is "stale", ie, relates to a game that is no longer ongoing.
-    pub(crate) stale: bool,
+    /// The `id` of the game in the database.
+    pub(crate) db_id: usize,
 }
 
 impl GameController {
@@ -61,10 +61,13 @@ impl GameController {
     pub(crate) fn new(settings: GameSettings) -> Self {
         let game = Game::new(settings.rules, &settings.board).unwrap();
         use_effect(move || {
-            println!("Setting AI");
             *AI.write() = Some(BasicAi::new(game.logic));
-            println!("AI is set");
         });
+        let db_id = add_to_db(
+            &game,
+            &settings.attacker,
+            &settings.defender
+        );
 
         Self {
             game: use_signal(move || game),
@@ -74,25 +77,8 @@ impl GameController {
             defender: settings.defender,
             last_move_time: use_signal(Instant::now),
             game_name: settings.name,
-            stale: false
+            db_id
         }
-    }
-
-    pub(crate) fn reset(&mut self, settings: GameSettings) {
-        let game = Game::new(settings.rules, &settings.board).unwrap();
-        use_effect(move || {
-            println!("Setting AI");
-            *AI.write() = Some(BasicAi::new(game.logic));
-            println!("AI is set");
-        });
-        self.game.set(game);
-        self.selected.set(None);
-        self.movable.write().clear();
-        self.attacker = settings.attacker;
-        self.defender = settings.defender;
-        self.last_move_time.set(Instant::now());
-        self.game_name = settings.name;
-        self.stale = false;
     }
 
     pub(crate) fn apply_play(&mut self, play: Play) -> Result<GameStatus, PlayInvalid> {
@@ -107,9 +93,9 @@ impl GameController {
 
     /// Handle the selection of a tile by the user, including, where necessary, processing a player
     /// move.
-    pub fn handle_selection(&mut self, tile: Tile) -> Option<AiRequest<MediumBasicBoardState>> {
+    pub fn handle_selection(&mut self, tile: Tile) {
         if self.is_ai_turn() {
-            return None
+            return
         }
         if self.selected.read().is_some()
             && self.movable.read().contains(&tile) {
@@ -117,18 +103,10 @@ impl GameController {
             let from_tile = self.selected.read().unwrap();
             let play_res = self.game.write()
                 .do_play(Play::from_tiles(from_tile, tile).unwrap());
-            if let Ok(gs) = play_res {
+            if let Ok(_) = play_res {
                 self.selected.set(None);
                 self.movable.set(HashSet::new());
                 self.last_move_time.set(Instant::now());
-                if gs == GameStatus::Ongoing && self.is_ai_turn() {
-                    if let Some(time_to_play) = self.current_player().ai_play_time {
-                        return Some(AiRequest {
-                            game_state: self.game.read().state,
-                            time_to_play
-                        });
-                    }
-                }
             }
         } else {
             let game = self.game.read();
@@ -142,7 +120,6 @@ impl GameController {
                 }
             }
         }
-        None
     }
 
     /// The player whose turn it is.
@@ -193,18 +170,14 @@ impl GameController {
         }
     }
 
-    pub fn undo_last_play(&mut self) -> Option<AiRequest<MediumBasicBoardState>> {
+    pub fn undo_last_play(&mut self) {
         self.game.write().undo_last_play();
         self.selected.set(None);
         self.movable.set(HashSet::new());
         self.last_move_time.set(Instant::now());
-        if let Some(time_to_play) = self.current_player().ai_play_time {
-            Some(AiRequest {
-                game_state: self.game.read().state,
-                time_to_play
-            })
-        } else {
-            None
-        }
+    }
+
+    pub fn save_to_db(&self) {
+        db::save_to_db(self.db_id, &self.game.read(), &self.attacker, &self.defender)
     }
 }

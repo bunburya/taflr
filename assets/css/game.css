@@ -68,7 +68,7 @@
     background-color: var(--light-green);
 }
 
-/* Side pane */
+/* Control panel */
 
 .ctrl-panel {
     display: flex;
@@ -77,7 +77,6 @@
     max-width: 35%;
 }
 
-/* Control panel button container */
 .ctrl-btn-container {
     display: flex;
     gap: 10px;
@@ -88,7 +87,7 @@
     flex: 1;
 }
 
-/* Info panel */
+/* Game info (part of control panel) */
 
 .game-name {
     font-weight: bold;
@@ -98,7 +97,7 @@
     font-weight: normal;
 }
 .current-player {
-    font-style: italic !important;
+    font-weight: bold !important;
 }
 
 .play-history {
@@ -168,11 +167,9 @@
         width: 100%;
         max-width: none;
         margin-top: 20px;
-        /* Keep normal column direction - don't reverse */
         flex-direction: column;
     }
     
-    /* Ensure buttons stay side by side on mobile */
     .ctrl-btn-container {
         display: flex;
         flex-direction: row;
@@ -187,7 +184,6 @@
         padding: 10px;
     }
     
-    /* Make play history more compact on mobile */
     .play-history {
         font-size: 14px;
         margin-top: 15px;

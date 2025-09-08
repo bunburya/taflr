@@ -3,6 +3,7 @@ use std::ops::Deref;
 use std::time::Duration;
 use dioxus::prelude::*;
 use hnefatafl::preset;
+use tokio::time::Instant;
 use crate::components::game_screen::GAME_SETTINGS;
 use crate::config::GameSettings;
 use crate::gamectrl::Player;
@@ -15,12 +16,22 @@ static NAMES: [(&str, &str); 5] = [
     ("Brennus", "Sulpicius")
 ];
 
-fn random_names() -> (&'static str, &'static str) {
+fn random_player_names() -> (&'static str, &'static str) {
     let time = std::time::SystemTime::now();
     let time = time.duration_since(std::time::UNIX_EPOCH).unwrap();
     let time = time.as_secs() as usize;
     let idx = time % NAMES.len();
     NAMES[idx]
+}
+
+fn default_game_name(variant: &Signal<String>) -> String {
+    let dt = chrono::Local::now();
+    format!(
+        "{} - {}",
+        variant.read(),
+        dt.format("%Y-%m-%d %H:%M")
+    )
+
 }
 
 #[derive(PartialEq)]
@@ -35,8 +46,11 @@ pub(crate) fn GameSetupScreen() -> Element {
     let mut ruleset = use_signal(|| preset::rules::COPENHAGEN);
     let mut board = use_signal(|| preset::boards::COPENHAGEN);
     let mut variant = use_signal(|| String::from("Copenhagen"));
+    let default_name = default_game_name(&variant);
+    let mut game_name = use_signal(move || default_name);
+    let mut game_name_changed = use_signal(|| false);
 
-    let (att_name, def_name) = random_names();
+    let (att_name, def_name) = random_player_names();
 
     let mut attacker_name = use_signal(|| att_name.to_string());
     let mut attacker_type = use_signal(|| PlayerType::Human);
@@ -66,7 +80,7 @@ pub(crate) fn GameSetupScreen() -> Element {
         let settings = GameSettings {
             rules: *ruleset.read().deref(),
             board: board.read().deref().to_string(),
-            name: variant.read().deref().to_string(),
+            name: game_name.read().deref().to_string(),
             attacker,
             defender
         };
@@ -88,19 +102,29 @@ pub(crate) fn GameSetupScreen() -> Element {
             div {
                 class: "setup-section",
 
-                h2 {
-                    class: "section-title",
-                    "Game Rules"
+                div {
+                    class: "form-group",
+                    label {
+                        class: "form-label",
+                        "Name:"
+                    }
+                    input {
+                        class: "form-input",
+                        r#type: "text",
+                        value: "{game_name}",
+                        oninput: move |e| {
+                            game_name.set(e.value());
+                            game_name_changed.set(true);
+                        }
+                    }
                 }
 
                 div {
                     class: "form-group",
-
                     label {
                         class: "form-label",
                         "Ruleset:"
                     }
-
                     select {
                         class: "form-select",
                         onchange: move |e| {
@@ -118,10 +142,11 @@ pub(crate) fn GameSetupScreen() -> Element {
                                 "Copenhagen" => preset::boards::COPENHAGEN,
                                 _ => unreachable!()
                             };
-                            println!("Writing board");
                             board.set(sel_board);
                             variant.set(sel_str);
-                            println!("Wrote board");
+                            if !(*game_name_changed.read()) {
+                                game_name.set(default_game_name(&variant));
+                            }
                         },
                         option { value: "Copenhagen", "Copenhagen" }
                         option { value: "Brandubh", "Brandubh" }
