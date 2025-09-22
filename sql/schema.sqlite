@@ -1,0 +1,39 @@
+CREATE TABLE IF NOT EXISTS games (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    variant_name TEXT NOT NULL,
+    turn INTEGER NOT NULL,
+    attacker_name TEXT NOT NULL,
+    attacker_ai_ttp INTEGER,
+    defender_name TEXT NOT NULL,
+    defender_ai_ttp INTEGER,
+    FOREIGN KEY(variant_name) REFERENCES variants(name)
+);
+
+CREATE TABLE IF NOT EXISTS play_records (
+    id INTEGER PRIMARY KEY,
+    game_id INTEGER NOT NULL,
+    turn INTEGER NOT NULL,
+    side TEXT NOT NULL,
+    play TEXT NOT NULL,
+    captures TEXT,
+    game_outcome TEXT
+);
+
+CREATE TABLE IF NOT EXISTS states (
+    id INTEGER PRIMARY KEY,
+    game_id INTEGER NOT NULL,
+    turn INTEGER NOT NULL,
+    board TEXT NOT NULL,
+    side_to_play TEXT NOT NULL,
+    repetitions TEXT NOT NULL,
+    plays_since_capture INTEGER NOT NULL,
+    status TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS variants (
+    id INTEGER PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    rules TEXT NOT NULL,
+    starting_board TEXT NOT NULL
+);

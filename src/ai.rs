@@ -14,6 +14,7 @@ use rand::{thread_rng, Rng};
 use std::cmp::min;
 use std::time::Duration;
 use std::time::Instant;
+use hnefatafl::collections::PieceMap;
 
 #[derive(Default)]
 pub(crate) struct SearchStats {
@@ -66,7 +67,7 @@ impl ZobristTable {
             h ^= self.def_to_move_bits;
         }
         for s in [Attacker, Defender] {
-            for t in board_state.iter_occupied(s) {
+            for t in board_state.occupied_by_side(s) {
                 let bi = t.col as usize + (t.row as usize * self.board_len as usize);
                 let p = board_state.get_piece(t).expect("There should be a piece here.");
                 let pi = Self::piece_index(p);
@@ -177,23 +178,25 @@ impl TranspositionTable {
 }
 
 pub trait Ai {
-    fn next_play<T: BoardState>(
+    type BoardState: BoardState;
+
+    fn next_play(
         &mut self,
-        game_state: &GameState<T>,
+        game_state: &GameState<Self::BoardState>,
         time_to_play: Duration
     ) -> Result<(ValidPlay, Vec<String>), AiError>;
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct BasicAi {
-    logic: GameLogic,
+pub struct BasicAi<T: BoardState> {
+    logic: GameLogic<T>,
     zt: ZobristTable,
     tt: TranspositionTable
 }
 
-impl BasicAi {
+impl<T: BoardState> BasicAi<T> {
     
-    pub(crate) fn new(logic: GameLogic) -> Self {
+    pub(crate) fn new(logic: GameLogic<T>) -> Self {
         let mut rng = thread_rng();
         Self {
             logic,
@@ -208,13 +211,18 @@ impl BasicAi {
     
     /// Evaluate board state and return a score. Higher = better for attacker, lower = better for
     /// defender.
-    fn eval_board<T: BoardState>(&self, board: &T) -> i32 {
-        let king_tile = board.get_king();
+    fn eval_board(&self, board: &T) -> i32 {
+        let king_tile_opt = board.get_king();
+        if king_tile_opt.is_none() {
+            // No king, so presumably it was captured
+            return i32::MAX
+        }
+        let king_tile = king_tile_opt.unwrap(); // unwrap safe because we just checked
         let king_coords = Coords::from(king_tile);
 
         let mut score = 0i32;
-        let att_count = board.count_pieces(Attacker) as i32;
-        let def_count = board.count_pieces(Defender) as i32;
+        let att_count = board.count_pieces_of_side(Attacker) as i32;
+        let def_count = board.count_pieces_of_side(Defender) as i32;
 
         // More pieces a side has/fewer pieces the other side has = better for that side
         score += att_count * 10;
@@ -238,7 +246,7 @@ impl BasicAi {
         // Attacker pieces closer to king = better for attacker
         let mut total_dist = 0u32;
         let mut attacker_count = 0u32;
-        for tile in board.iter_occupied(Attacker) {
+        for tile in board.occupied_by_side(Attacker) {
             total_dist += Coords::from(tile).row_col_offset_from(king_coords)
                 .manhattan_dist() as u32;
             attacker_count += 1;
@@ -250,7 +258,7 @@ impl BasicAi {
     
     /// Evaluate game state (board state + repetitions) and return a score. Higher = better for
     /// attacker, lower = better for defender.
-    fn eval_state<T: BoardState>(&self, state: &GameState<T>, depth: u8) -> i32 {
+    fn eval_state(&self, state: &GameState<T>, depth: u8) -> i32 {
         if let Over(Win(_, winner)) = state.status {
             // prox_penalty is larger the further down the tree we had to search to get the win.
             // Used to promote quick wins/slow losses
@@ -274,14 +282,14 @@ impl BasicAi {
     }
     
     /// Quickly evaluate a play. Used in play ordering.
-    fn eval_play<T: BoardState>(&self, play: ValidPlay, state: &GameState<T>) -> i32 {
+    fn eval_play(&self, play: ValidPlay, state: &GameState<T>) -> i32 {
         let mut score = 0i32;
         let to = play.play.to();
         let board = &state.board;
         let moving_piece = board.get_piece(play.play.from).expect("No piece to move.");
 
         // Prioritise capture plays
-        score += (self.logic.get_captures(play, moving_piece, state).len() as i32) * 1000;
+        score += (self.logic.get_captures(play, moving_piece, state).occupied().count() as i32) * 1000;
         
         // King-specific plays
         if moving_piece == KING {
@@ -313,7 +321,7 @@ impl BasicAi {
         score
     }
     
-    fn order_plays<T: BoardState>(
+    fn order_plays(
         &self,
         plays: Vec<ValidPlay>,
         state: &GameState<T>,
@@ -335,7 +343,7 @@ impl BasicAi {
     }
 
     /// The minimax algorithm. Returns (best score, best play) tuple.
-    pub(crate) fn minimax<T: BoardState>(
+    pub(crate) fn minimax(
         &mut self,
         play: ValidPlay,
         starting_state: GameState<T>,
@@ -375,7 +383,7 @@ impl BasicAi {
         
         // Collect and sort moves
         let mut plays = Vec::new();
-        for t in state.board.iter_occupied(state.side_to_play) {
+        for t in state.board.occupied_by_side(state.side_to_play) {
             for p in self.logic.iter_plays(t, &state).expect("Could not iterate plays") {
                 plays.push(p);
             }
@@ -425,7 +433,7 @@ impl BasicAi {
     }
 
     /// Perform minimax search (with alpha beta pruning) up to the given depth.
-    fn search_to_depth<T: BoardState>(
+    fn search_to_depth(
         &mut self,
         depth: u8,
         state: GameState<T>,
@@ -435,7 +443,7 @@ impl BasicAi {
     ) -> (Option<ValidPlay>, i32, bool) {
         
         let mut plays: Vec<(ValidPlay, GameState<T>)> = Vec::new();
-        for t in state.board.iter_occupied(state.side_to_play) {
+        for t in state.board.occupied_by_side(state.side_to_play) {
             for p in self.logic.iter_plays(t, &state).expect("Could not iterate plays") {
                 let next_state = self.logic.do_valid_play(p, state).new_state;
                 plays.push((p, next_state));
@@ -461,7 +469,7 @@ impl BasicAi {
         (best_play, best_score, false)
     }
 
-    fn iddfs<T: BoardState>(
+    fn iddfs(
         &mut self,
         state: GameState<T>,
         maximize: bool,
@@ -503,8 +511,11 @@ impl BasicAi {
     
 }
 
-impl Ai for BasicAi {
-    fn next_play<T: BoardState>(&mut self, game_state: &GameState<T>, time_to_play: Duration) -> Result<(ValidPlay, Vec<String>), AiError> {
+impl<T: BoardState> Ai for BasicAi<T> {
+
+    type BoardState = T;
+
+    fn next_play(&mut self, game_state: &GameState<T>, time_to_play: Duration) -> Result<(ValidPlay, Vec<String>), AiError> {
         let mut stats = SearchStats::default();
         let start_time = Instant::now();
         let side = game_state.side_to_play;

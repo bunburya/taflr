@@ -3,7 +3,8 @@ mod ai;
 mod gamectrl;
 mod config;
 mod aictrl;
-mod db;
+mod sqlite;
+mod error;
 
 use dioxus::prelude::*;
 use crate::components::game_screen::GameScreen;

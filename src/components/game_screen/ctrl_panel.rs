@@ -1,8 +1,8 @@
 use dioxus::prelude::*;
+use hnefatafl::aliases::MediumPlayRecord;
 use hnefatafl::pieces::Side;
-use hnefatafl::play::PlayRecord;
 use crate::components::game_screen::GAME_SETTINGS;
-use crate::gamectrl::{GameController, Player};
+use crate::gamectrl::GameController;
 
 #[component]
 fn PlayerTh(side: Side) -> Element {
@@ -35,13 +35,13 @@ fn PlayerTh(side: Side) -> Element {
 
 /// Display the history of plays (moves) in the current game.
 #[component]
-fn PlayHistory(plays: Vec<PlayRecord>) -> Element {
+fn PlayHistory(plays: Vec<MediumPlayRecord>) -> Element {
 
     let game_ctrl = use_context::<GameController>();
     let starting_side = game_ctrl.game.read().logic.rules.starting_side;
 
     // Group plays into pairs (attacker play, defender play)
-    let play_pairs: Vec<(Option<&PlayRecord>, Option<&PlayRecord>)> = plays
+    let play_pairs: Vec<(Option<&MediumPlayRecord>, Option<&MediumPlayRecord>)> = plays
         .chunks(2)
         .map(|chunk| {
             (chunk.first(), chunk.get(1))

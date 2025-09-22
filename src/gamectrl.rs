@@ -1,19 +1,18 @@
 use crate::ai::{Ai, BasicAi};
 use crate::aictrl::{AiResponse, AI};
-use crate::config::GameSettings;
-use crate::db;
-use crate::db::add_to_db;
+use crate::config::{GameSettings, Variant};
 use dioxus::prelude::*;
-use hnefatafl::board::state::{BoardState, MediumBasicBoardState};
+use hnefatafl::board::state::BoardState;
 use hnefatafl::error::PlayInvalid;
 use hnefatafl::game::state::GameState;
-use hnefatafl::game::{Game, GameStatus, MediumBasicGame};
+use hnefatafl::game::{Game, GameStatus};
 use hnefatafl::pieces::Side;
 use hnefatafl::play::{Play, ValidPlay};
 use hnefatafl::tiles::Tile;
 use std::collections::HashSet;
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{Duration, Instant};
+use hnefatafl::aliases::{MediumBasicBoardState, MediumBasicGame};
 #[cfg(target_arch = "wasm32")]
 use web_time::{Duration, Instant};
 
@@ -52,6 +51,7 @@ pub(crate) struct GameController {
     pub(crate) last_move_time: Signal<Instant>,
     /// The name of the game.
     pub(crate) game_name: String,
+    pub(crate) variant: Variant,
     /// The `id` of the game in the database.
     pub(crate) db_id: usize,
 }
@@ -59,15 +59,11 @@ pub(crate) struct GameController {
 impl GameController {
 
     pub(crate) fn new(settings: GameSettings) -> Self {
-        let game = Game::new(settings.rules, &settings.board).unwrap();
+        let game = Game::new(settings.variant.rules, &settings.variant.starting_board).unwrap();
         use_effect(move || {
             *AI.write() = Some(BasicAi::new(game.logic));
         });
-        let db_id = add_to_db(
-            &game,
-            &settings.attacker,
-            &settings.defender
-        );
+        let db_id = 0;
 
         Self {
             game: use_signal(move || game),
@@ -77,6 +73,7 @@ impl GameController {
             defender: settings.defender,
             last_move_time: use_signal(Instant::now),
             game_name: settings.name,
+            variant: settings.variant,
             db_id
         }
     }
@@ -177,7 +174,8 @@ impl GameController {
         self.last_move_time.set(Instant::now());
     }
 
-    pub fn save_to_db(&self) {
-        db::save_to_db(self.db_id, &self.game.read(), &self.attacker, &self.defender)
+    pub(crate) fn add_to_db(&self) {
+
     }
+
 }

@@ -1,12 +1,13 @@
 use crate::ai::{Ai, BasicAi};
 use dioxus::prelude::{Readable, Signal};
 use dioxus::signals::GlobalSignal;
-use hnefatafl::board::state::{BoardState, MediumBasicBoardState};
+use hnefatafl::board::state::BoardState;
 use hnefatafl::game::state::GameState;
 use hnefatafl::play::ValidPlay;
 use std::time::Duration;
+use hnefatafl::aliases::MediumBasicBoardState;
 
-pub static AI: GlobalSignal<Option<BasicAi>> = Signal::global(|| None);
+pub static AI: GlobalSignal<Option<BasicAi<MediumBasicBoardState>>> = Signal::global(|| None);
 
 pub(crate) struct AiRequest<B: BoardState> {
     pub(crate) game_state: GameState<B>,

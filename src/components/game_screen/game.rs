@@ -3,16 +3,13 @@ use web_time::Instant;
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{Duration, Instant};
 use async_std::prelude::StreamExt;
-use dioxus::logger::tracing::Instrument;
 use dioxus::prelude::*;
-use hnefatafl::board::state::MediumBasicBoardState;
+use hnefatafl::aliases::MediumBasicBoardState;
 use hnefatafl::game::GameStatus;
-use crate::ai::BasicAi;
 use crate::aictrl::{compute_ai_play, AiRequest, AI};
 use crate::components::game_screen::board::Board;
 use crate::components::game_screen::ctrl_panel::ControlPanel;
 use crate::config::GameSettings;
-use crate::db::DB;
 use crate::gamectrl::GameController;
 
 #[cfg(target_arch = "wasm32")]
@@ -64,7 +61,7 @@ pub(crate) fn Game(settings: GameSettings) -> Element {
                 })
             };
         }
-        game_ctrl.save_to_db()
+        //game_ctrl.save_to_db()
     });
 
     rsx! {

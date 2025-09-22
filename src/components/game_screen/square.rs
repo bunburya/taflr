@@ -1,6 +1,6 @@
 use std::ops::Deref;
 use dioxus::prelude::*;
-use hnefatafl::board::state::{BoardState, MediumBasicBoardState};
+use hnefatafl::board::state::BoardState;
 use hnefatafl::pieces::BASIC_PIECES;
 use hnefatafl::rules::Ruleset;
 use hnefatafl::tiles::Tile;
@@ -24,7 +24,7 @@ pub(crate) fn Square(tile: Tile) -> Element {
     if special_tiles.throne == tile &&  display_throne(rules) {
         // Only highlight throne if there are some special rules applicable to it
         classes.push("throne")
-    } else if special_tiles.corners.contains(&tile) && !rules.edge_escape {
+    } else if special_tiles.corners.contains(tile) && !rules.edge_escape {
         // Only highlight corners in a corner escape game
         classes.push("corner")
     }

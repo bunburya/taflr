@@ -1,7 +1,6 @@
 use dioxus::prelude::*;
-use hnefatafl::board::state::{BoardState, MediumBasicBoardState};
+use hnefatafl::board::state::BoardState;
 use hnefatafl::tiles::Tile;
-use crate::aictrl::AiRequest;
 use crate::components::game_screen::square::Square;
 use crate::gamectrl::GameController;
 

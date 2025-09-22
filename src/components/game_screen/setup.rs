@@ -3,9 +3,8 @@ use std::ops::Deref;
 use std::time::Duration;
 use dioxus::prelude::*;
 use hnefatafl::preset;
-use tokio::time::Instant;
 use crate::components::game_screen::GAME_SETTINGS;
-use crate::config::GameSettings;
+use crate::config::{GameSettings, Variant};
 use crate::gamectrl::Player;
 
 static NAMES: [(&str, &str); 5] = [
@@ -24,11 +23,11 @@ fn random_player_names() -> (&'static str, &'static str) {
     NAMES[idx]
 }
 
-fn default_game_name(variant: &Signal<String>) -> String {
+fn default_game_name(variant: &str) -> String {
     let dt = chrono::Local::now();
     format!(
         "{} - {}",
-        variant.read(),
+        variant,
         dt.format("%Y-%m-%d %H:%M")
     )
 
@@ -45,8 +44,8 @@ pub(crate) fn GameSetupScreen() -> Element {
     println!("Rendering GameSetupScreen");
     let mut ruleset = use_signal(|| preset::rules::COPENHAGEN);
     let mut board = use_signal(|| preset::boards::COPENHAGEN);
-    let mut variant = use_signal(|| String::from("Copenhagen"));
-    let default_name = default_game_name(&variant);
+    let mut variant = use_signal(|| "Copenhagen".parse::<Variant>().unwrap());
+    let default_name = default_game_name(&variant.read().name);
     let mut game_name = use_signal(move || default_name);
     let mut game_name_changed = use_signal(|| false);
 
@@ -78,8 +77,7 @@ pub(crate) fn GameSetupScreen() -> Element {
             }
         };
         let settings = GameSettings {
-            rules: *ruleset.read().deref(),
-            board: board.read().deref().to_string(),
+            variant: variant.read().clone(),
             name: game_name.read().deref().to_string(),
             attacker,
             defender
@@ -129,23 +127,9 @@ pub(crate) fn GameSetupScreen() -> Element {
                         class: "form-select",
                         onchange: move |e| {
                             let sel_str = e.value();
-                            let sel_rules = match sel_str.as_str() {
-                                "Brandubh" => preset::rules::BRANDUBH,
-                                "Tablut" => preset::rules::TABLUT,
-                                "Copenhagen" => preset::rules::COPENHAGEN,
-                                _ => unreachable!()
-                            };
-                            ruleset.set(sel_rules);
-                            let sel_board = match sel_str.as_str() {
-                                "Brandubh" => preset::boards::BRANDUBH,
-                                "Tablut" => preset::boards::TABLUT,
-                                "Copenhagen" => preset::boards::COPENHAGEN,
-                                _ => unreachable!()
-                            };
-                            board.set(sel_board);
-                            variant.set(sel_str);
+                            variant.set(sel_str.parse().unwrap());
                             if !(*game_name_changed.read()) {
-                                game_name.set(default_game_name(&variant));
+                                game_name.set(default_game_name(&variant.read().name));
                             }
                         },
                         option { value: "Copenhagen", "Copenhagen" }
