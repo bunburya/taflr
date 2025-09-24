@@ -11,6 +11,9 @@ use sqlx::sqlite::SqliteRow;
 use crate::config::{GameSettings, Variant};
 use crate::error::DbError;
 use crate::gamectrl::Player;
+use crate::variants::OOTB_VARIANTS;
+
+const DB_PATH: &str = "sqlite://taflr.sqlite";
 
 impl<'r> sqlx::FromRow<'r, SqliteRow> for Variant {
     fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
@@ -56,23 +59,38 @@ pub(crate) struct GameDbObject<B: BoardState> {
     game: Game<B>
 }
 
+#[derive(Clone)]
 pub(crate) struct DbController {
     pub (crate) pool: SqlitePool,
 }
 
 impl DbController {
+
+    pub(crate) async fn new() -> Result<Self, DbError> {
+        let mut s = Self { pool: SqlitePool::connect(DB_PATH).await? };
+        s.create_schemas().await?;
+        s.populate_tables().await?;
+        Ok(s)
+    }
+
     pub(crate) async fn create_schemas(&mut self) -> Result<(), sqlx::Error> {
         sqlx::query(include_str!("../sql/schema.sqlite")).execute(&self.pool).await?;
         Ok(())
     }
 
-    pub(crate) async fn add_game<B: BoardState>(
-        &mut self,
-        settings: &GameSettings,
-        game: &Game<B>,
-    ) -> Result<i64, sqlx::Error> {
+    pub(crate) async fn populate_tables(&mut self) -> Result<(), DbError> {
+        for (rules, starting_board, name) in OOTB_VARIANTS {
+            self.add_variant(Variant {
+                rules,
+                starting_board: starting_board.to_string(),
+                name: name.to_string()
+            }).await?;
+        }
+        Ok(())
+    }
+
+    pub(crate) async fn add_game(&mut self, settings: GameSettings) -> Result<i64, sqlx::Error> {
         let variant_name = settings.variant.name.to_string();
-        let turn = game.state.turn as i64;
         let att_ai_ttp = settings.attacker.ai_play_time.map(|d| d.as_secs_f64());
         let def_ai_ttp = settings.defender.ai_play_time.map(|d| d.as_secs_f64());
         Ok(sqlx::query!(
@@ -89,7 +107,7 @@ impl DbController {
             "#,
             settings.name,
             variant_name,
-            turn,
+            0,
             settings.attacker.name,
             att_ai_ttp,
             settings.defender.name,
@@ -166,6 +184,9 @@ impl DbController {
             state.board.side_len(),
             &play_record
         ).await?;
+        let turn = state.turn as i64;
+        sqlx::query!("UPDATE games SET turn = ? WHERE id = ?", turn, game_id)
+            .execute(&self.pool).await?;
 
         Ok((state_id, record_id))
     }
@@ -217,5 +238,21 @@ impl DbController {
         }
         game.state_history = state_history;
         Ok((gso.game_settings, game))
+    }
+
+    pub(crate) async fn add_variant(&mut self, variant: Variant) -> Result<i64, DbError> {
+        let rule_str = serde_json::to_string(&variant.rules)?;
+        Ok(sqlx::query!(
+            r#"
+                INSERT OR IGNORE INTO variants (
+                    name,
+                    rules,
+                    starting_board
+                ) VALUES (?, ?, ?)
+            "#,
+            variant.name,
+            rule_str,
+            variant.starting_board
+        ).execute(&self.pool).await?.last_insert_rowid())
     }
 }

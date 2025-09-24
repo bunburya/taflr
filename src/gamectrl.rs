@@ -1,7 +1,8 @@
 use crate::ai::{Ai, BasicAi};
 use crate::aictrl::{AiResponse, AI};
-use crate::config::{GameSettings, Variant};
+use crate::config::GameSettings;
 use dioxus::prelude::*;
+use hnefatafl::aliases::{MediumBasicBoardState, MediumBasicGame};
 use hnefatafl::board::state::BoardState;
 use hnefatafl::error::PlayInvalid;
 use hnefatafl::game::state::GameState;
@@ -12,7 +13,6 @@ use hnefatafl::tiles::Tile;
 use std::collections::HashSet;
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{Duration, Instant};
-use hnefatafl::aliases::{MediumBasicBoardState, MediumBasicGame};
 #[cfg(target_arch = "wasm32")]
 use web_time::{Duration, Instant};
 
@@ -37,23 +37,18 @@ impl Player {
 /// interact with the game.
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub(crate) struct GameController {
+    /// The game settings.
+    pub(crate) settings: GameSettings,
     /// A copy of the ongoing game (*not* the "source of truth"), wrapped in a signal.
     pub(crate) game: Signal<MediumBasicGame>,
     /// The selected tile, if any, wrapped in a signal.
     pub(crate) selected: Signal<Option<Tile>>,
     /// The set of tiles that are accessible from the selected tile, wrapped in a signal.
     pub(crate) movable: Signal<HashSet<Tile>>,
-    /// Information about the attacking player.
-    pub(crate) attacker: Player,
-    /// Information about the defending player.
-    pub(crate) defender: Player,
     /// The time the last move was made by either player, wrapped in a signal.
     pub(crate) last_move_time: Signal<Instant>,
-    /// The name of the game.
-    pub(crate) game_name: String,
-    pub(crate) variant: Variant,
     /// The `id` of the game in the database.
-    pub(crate) db_id: usize,
+    pub(crate) db_id: i64,
 }
 
 impl GameController {
@@ -66,14 +61,11 @@ impl GameController {
         let db_id = 0;
 
         Self {
+            settings,
             game: use_signal(move || game),
             selected: use_signal(|| None),
             movable: use_signal(HashSet::new),
-            attacker: settings.attacker,
-            defender: settings.defender,
             last_move_time: use_signal(Instant::now),
-            game_name: settings.name,
-            variant: settings.variant,
             db_id
         }
     }
@@ -122,8 +114,8 @@ impl GameController {
     /// The player whose turn it is.
     pub fn current_player(&self) -> &Player {
         match self.game.read().state.side_to_play {
-            Side::Attacker => &self.attacker,
-            Side::Defender => &self.defender
+            Side::Attacker => &self.settings.attacker,
+            Side::Defender => &self.settings.defender
         }
     }
 

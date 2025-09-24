@@ -11,6 +11,7 @@ use crate::components::game_screen::board::Board;
 use crate::components::game_screen::ctrl_panel::ControlPanel;
 use crate::config::GameSettings;
 use crate::gamectrl::GameController;
+use crate::sqlite::DbController;
 
 #[cfg(target_arch = "wasm32")]
 async fn async_sleep(ms: u32) {
@@ -28,6 +29,8 @@ async fn async_sleep(ms: u32) {
 #[component]
 pub(crate) fn Game(settings: GameSettings) -> Element {
     let game_ctrl = GameController::new(settings);
+
+    let db_ctrl = use_context::<DbController>();
 
     use_context_provider(move || game_ctrl);
 
@@ -61,7 +64,17 @@ pub(crate) fn Game(settings: GameSettings) -> Element {
                 })
             };
         }
-        //game_ctrl.save_to_db()
+    });
+
+    use_effect(move || {
+        let game_ctrl = use_context::<GameController>();
+        let mut db_ctrl = db_ctrl.clone();
+        let settings = game_ctrl.settings.clone();
+        spawn(async move {
+            if let Err(e) = db_ctrl.add_game(settings).await {
+                eprintln!("Error saving game: {}", e);
+            }
+        });
     });
 
     rsx! {

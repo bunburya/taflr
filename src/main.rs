@@ -5,9 +5,12 @@ mod config;
 mod aictrl;
 mod sqlite;
 mod error;
+mod variants;
 
 use dioxus::prelude::*;
 use crate::components::game_screen::GameScreen;
+use crate::error::DbError;
+use crate::sqlite::DbController;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
@@ -29,11 +32,19 @@ fn Style() -> Element {
 
 #[component]
 fn App() -> Element {
-    rsx! {
-        div {
-            Style {}
-            GameScreen {}
-        }
+    let resource: Resource<Result<DbController, DbError>> = use_resource(async || { DbController::new().await });
+    match &*resource.read_unchecked() {
+        Some(Ok(db_ctrl)) => {
+            use_context_provider(move || db_ctrl.clone());
+            rsx! {
+                div {
+                    Style {}
+                    GameScreen {}
+                }
+            }
+        },
+        Some(Err(err)) => rsx! { "Error: {err:#?}" },
+        None => rsx! { "Loading..." },
     }
 }
 

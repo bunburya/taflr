@@ -1,4 +1,5 @@
 /// An error encountered while interacting with the database.
+#[derive(Debug)]
 pub(crate) enum DbError {
     Sql(sqlx::Error),
     Parse(hnefatafl::error::ParseError),

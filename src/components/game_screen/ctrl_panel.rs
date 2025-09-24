@@ -8,9 +8,9 @@ use crate::gamectrl::GameController;
 fn PlayerTh(side: Side) -> Element {
     let game_ctrl = use_context::<GameController>();
     let player = if side == Side::Attacker {
-        game_ctrl.attacker
+        game_ctrl.settings.attacker
     } else {
-        game_ctrl.defender
+        game_ctrl.settings.defender
     };
     let status_str = format!(
         "({}, {})",
@@ -108,7 +108,7 @@ pub(crate) fn ControlPanel() -> Element {
             class: "ctrl-panel",
             div {
                 class: "game-name",
-                "{game_ctrl.game_name}"
+                "{game_ctrl.settings.name}"
             }
             hr {}
             div {

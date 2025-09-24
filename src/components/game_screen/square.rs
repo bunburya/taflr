@@ -16,7 +16,7 @@ fn display_throne(rules: Ruleset) -> bool {
 
 #[component]
 pub(crate) fn Square(tile: Tile) -> Element {
-    let game_ctrl = use_context::<GameController>();
+    let mut game_ctrl = use_context::<GameController>();
     let piece = game_ctrl.game.read().state.board.get_piece(tile);
     let mut classes = vec!["square"];
     let special_tiles = game_ctrl.game.read().logic.board_geo.special_tiles;
@@ -37,7 +37,7 @@ pub(crate) fn Square(tile: Tile) -> Element {
         div {
             class: classes.join(" "),
             onclick: move |_| {
-                let mut game_ctrl = use_context::<GameController>();
+                //let mut game_ctrl = use_context::<GameController>();
                 game_ctrl.handle_selection(tile);
             },
             { piece.map(|p| Some(rsx! {PieceIcon {piece: p} }))}
