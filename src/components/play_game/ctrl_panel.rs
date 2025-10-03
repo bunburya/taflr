@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use hnefatafl::aliases::MediumPlayRecord;
 use hnefatafl::pieces::Side;
-use crate::components::game_screen::GAME_SETTINGS;
+use crate::components::GAME_SETTINGS;
 use crate::gamectrl::GameController;
 
 #[component]

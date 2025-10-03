@@ -1,0 +1,13 @@
+h1 {
+    text-align: center;
+}
+.mainmenu {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.mainmenu-item {
+    width: 50%;
+    margin: 4px;
+}

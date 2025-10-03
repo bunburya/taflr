@@ -17,7 +17,9 @@ CREATE TABLE IF NOT EXISTS play_records (
     side TEXT NOT NULL,
     play TEXT NOT NULL,
     captures TEXT,
-    game_outcome TEXT
+    game_outcome TEXT,
+    FOREIGN KEY(game_id) REFERENCES games(id),
+    UNIQUE(game_id, turn)
 );
 
 CREATE TABLE IF NOT EXISTS states (
@@ -28,7 +30,9 @@ CREATE TABLE IF NOT EXISTS states (
     side_to_play TEXT NOT NULL,
     repetitions TEXT NOT NULL,
     plays_since_capture INTEGER NOT NULL,
-    status TEXT NOT NULL
+    status TEXT NOT NULL,
+    FOREIGN KEY(game_id) REFERENCES games(id),
+    UNIQUE(game_id, turn)
 );
 
 CREATE TABLE IF NOT EXISTS variants (

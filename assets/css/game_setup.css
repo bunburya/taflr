@@ -87,30 +87,6 @@
     color: var(--ivory);
 }
 
-/* Start Game Button */
-.start-game-btn {
-    width: 100%;
-    padding: 1rem 2rem;
-    background: var(--green);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.25rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.start-game-btn:hover {
-    background: var(--light-green);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px var(--shadow);
-}
-
-.start-game-btn:active {
-    transform: translateY(0);
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
     .players-section {

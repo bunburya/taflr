@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use hnefatafl::board::state::BoardState;
 use hnefatafl::tiles::Tile;
-use crate::components::game_screen::square::Square;
+use crate::components::play_game::square::Square;
 use crate::gamectrl::GameController;
 
 #[component]

@@ -4,3 +4,27 @@ body {
     color: var(--charcoal);
     line-height: 1.6;
 }
+
+/* Default styling for buttons */
+
+button {
+    padding: 1rem 2rem;
+    background: var(--green);
+    color: var(--ivory);
+    border: none;
+    border-radius: 8px;
+    font-size: 1.25rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background: var(--light-green);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--shadow);
+}
+
+button:active {
+    transform: translateY(0);
+}

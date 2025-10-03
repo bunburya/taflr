@@ -3,7 +3,7 @@ use std::time::Duration;
 use sqlx::{query, query_as, Error, Row, SqlitePool};
 use hnefatafl::board::state::BoardState;
 use hnefatafl::collections::{PieceMap};
-use hnefatafl::game::{Game};
+use hnefatafl::game::{Game, GameStatus};
 use hnefatafl::game::state::GameState;
 use hnefatafl::pieces::Side;
 use hnefatafl::play::{Play, PlayEffects, PlayRecord};
@@ -54,9 +54,10 @@ impl<'r> sqlx::FromRow<'r, SqliteRow> for GameSettingsDbObject {
     }
 }
 
-pub(crate) struct GameDbObject<B: BoardState> {
+pub(crate) struct DbGameRecord {
     id: u64,
-    game: Game<B>
+    settings: GameSettings,
+    status: GameStatus,
 }
 
 #[derive(Clone)]
@@ -89,7 +90,7 @@ impl DbController {
         Ok(())
     }
 
-    pub(crate) async fn add_game(&mut self, settings: GameSettings) -> Result<i64, sqlx::Error> {
+    pub(crate) async fn add_game(&mut self, settings: GameSettings) -> Result<i64, DbError> {
         let variant_name = settings.variant.name.to_string();
         let att_ai_ttp = settings.attacker.ai_play_time.map(|d| d.as_secs_f64());
         let def_ai_ttp = settings.defender.ai_play_time.map(|d| d.as_secs_f64());
@@ -192,10 +193,7 @@ impl DbController {
     }
 
     pub(crate) async fn load_game<B: BoardState>(&self, id: i64) -> Result<(GameSettings, Game<B>), DbError> {
-        let gso: GameSettingsDbObject = query_as(r"SELECT * FROM games WHERE id = ?")
-            .bind(id)
-            .fetch_one(&self.pool)
-            .await?;
+        let game_settings = self.load_settings(id).await?;
         let state_history: Vec<GameState<B>> = query(
             r"SELECT * FROM states WHERE game_id = ? ORDER BY turn"
         )
@@ -229,15 +227,23 @@ impl DbController {
             }))
             .collect::<Result<_, DbError>>()?;
         let mut game = Game::new(
-            gso.game_settings.variant.rules,
-            &gso.game_settings.variant.starting_board,
+            game_settings.variant.rules,
+            game_settings.variant.starting_board.as_str(),
         ).expect("Could not construct game");
         game.play_history = play_history;
         if let Some(s) = state_history.last() {
             game.state = *s;
         }
         game.state_history = state_history;
-        Ok((gso.game_settings, game))
+        Ok((game_settings, game))
+    }
+
+    pub(crate) async fn load_settings(&self, id: i64) -> Result<GameSettings, DbError> {
+        let gso: GameSettingsDbObject = query_as(r"SELECT * FROM games WHERE id = ?")
+            .bind(id)
+            .fetch_one(&self.pool)
+            .await?;
+        Ok(gso.game_settings)
     }
 
     pub(crate) async fn add_variant(&mut self, variant: Variant) -> Result<i64, DbError> {

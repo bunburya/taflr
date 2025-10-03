@@ -1,14 +1,16 @@
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
+use hnefatafl::game::Game as HnGame;
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{Duration, Instant};
 use async_std::prelude::StreamExt;
 use dioxus::prelude::*;
 use hnefatafl::aliases::MediumBasicBoardState;
 use hnefatafl::game::GameStatus;
-use crate::aictrl::{compute_ai_play, AiRequest, AI};
-use crate::components::game_screen::board::Board;
-use crate::components::game_screen::ctrl_panel::ControlPanel;
+use crate::aictrl::{compute_ai_play, AiRequest};
+use crate::components;
+use crate::components::play_game::board::Board;
+use crate::components::play_game::ctrl_panel::ControlPanel;
 use crate::config::GameSettings;
 use crate::gamectrl::GameController;
 use crate::sqlite::DbController;
@@ -27,8 +29,8 @@ async fn async_sleep(ms: u32) {
 }
 
 #[component]
-pub(crate) fn Game(settings: GameSettings) -> Element {
-    let game_ctrl = GameController::new(settings);
+pub(crate) fn Game(settings: GameSettings, game: HnGame<MediumBasicBoardState>, db_id: i64) -> Element {
+    let game_ctrl = GameController::new(settings, game, db_id);
 
     let db_ctrl = use_context::<DbController>();
 
@@ -72,7 +74,7 @@ pub(crate) fn Game(settings: GameSettings) -> Element {
         let settings = game_ctrl.settings.clone();
         spawn(async move {
             if let Err(e) = db_ctrl.add_game(settings).await {
-                eprintln!("Error saving game: {}", e);
+                eprintln!("Error saving game: {:?}", e);
             }
         });
     });

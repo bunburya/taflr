@@ -5,7 +5,7 @@ use hnefatafl::pieces::BASIC_PIECES;
 use hnefatafl::rules::Ruleset;
 use hnefatafl::tiles::Tile;
 use crate::aictrl::AiRequest;
-use crate::components::game_screen::piece::PieceIcon;
+use crate::components::play_game::piece::PieceIcon;
 use crate::gamectrl::GameController;
 
 fn display_throne(rules: Ruleset) -> bool {

@@ -3,9 +3,19 @@ use std::ops::Deref;
 use std::time::Duration;
 use dioxus::prelude::*;
 use hnefatafl::preset;
-use crate::components::game_screen::GAME_SETTINGS;
 use crate::config::{GameSettings, Variant};
+use crate::error::DbError;
 use crate::gamectrl::Player;
+use crate::route::Route;
+use crate::sqlite::DbController;
+
+enum GameCreationStatus {
+    Setup,
+    Creating(GameSettings),
+    Created(i64)
+}
+
+const STATUS: GlobalSignal<GameCreationStatus> = Signal::global(|| GameCreationStatus::Setup);
 
 static NAMES: [(&str, &str); 5] = [
     ("Queen Medb", "Cú Chulainn"),
@@ -40,10 +50,30 @@ enum PlayerType {
 }
 
 #[component]
-pub(crate) fn GameSetupScreen() -> Element {
+fn CreatingGame(settings: GameSettings) -> Element {
+    let db_ctrl = use_context::<DbController>();
+    let resource: Resource<Result<i64, DbError>> = use_resource(move || {
+        let mut db_ctrl = db_ctrl.clone();
+        let settings = settings.clone();
+        async move {
+            db_ctrl.add_game(settings).await
+        }
+    });
+    match &*resource.read_unchecked() {
+        Some(Ok(id)) => {
+            *STATUS.write() = GameCreationStatus::Created(*id);
+            rsx! { "Game created in database, redirecting..." }
+        },
+        Some(Err(err)) => rsx! { "Error saving game to database: {err:#?}" },
+        None => rsx! { "Saving game to database..."}
+    }
+}
+
+#[component]
+pub(crate) fn GameSetup() -> Element {
     println!("Rendering GameSetupScreen");
-    let mut ruleset = use_signal(|| preset::rules::COPENHAGEN);
-    let mut board = use_signal(|| preset::boards::COPENHAGEN);
+    let ruleset = use_signal(|| preset::rules::COPENHAGEN);
+    let board = use_signal(|| preset::boards::COPENHAGEN);
     let mut variant = use_signal(|| "Copenhagen".parse::<Variant>().unwrap());
     let default_name = default_game_name(&variant.read().name);
     let mut game_name = use_signal(move || default_name);
@@ -82,9 +112,7 @@ pub(crate) fn GameSetupScreen() -> Element {
             attacker,
             defender
         };
-        use_effect(move || {
-            *GAME_SETTINGS.write() = Some(settings.clone());
-        });
+        *STATUS.write() = GameCreationStatus::Creating(settings);
 
     };
 
@@ -289,4 +317,21 @@ pub(crate) fn GameSetupScreen() -> Element {
         }
     }
 
+}
+
+#[component]
+pub(crate) fn NewGame() -> Element {
+    match *STATUS.read() {
+        GameCreationStatus::Setup => rsx! {
+            GameSetup {}
+        },
+        GameCreationStatus::Creating(ref settings) => rsx! {
+            CreatingGame {settings: settings.clone()}
+        },
+        GameCreationStatus::Created(id) => {
+            let nav = navigator();
+            nav.push(Route::PlayGame { id });
+            rsx! { "Game created." }
+        }
+    }
 }

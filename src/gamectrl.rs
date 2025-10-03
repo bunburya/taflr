@@ -6,7 +6,7 @@ use hnefatafl::aliases::{MediumBasicBoardState, MediumBasicGame};
 use hnefatafl::board::state::BoardState;
 use hnefatafl::error::PlayInvalid;
 use hnefatafl::game::state::GameState;
-use hnefatafl::game::{Game, GameStatus};
+use hnefatafl::game::GameStatus;
 use hnefatafl::pieces::Side;
 use hnefatafl::play::{Play, ValidPlay};
 use hnefatafl::tiles::Tile;
@@ -53,12 +53,10 @@ pub(crate) struct GameController {
 
 impl GameController {
 
-    pub(crate) fn new(settings: GameSettings) -> Self {
-        let game = Game::new(settings.variant.rules, &settings.variant.starting_board).unwrap();
+    pub(crate) fn new(settings: GameSettings, game: MediumBasicGame, db_id: i64) -> Self {
         use_effect(move || {
             *AI.write() = Some(BasicAi::new(game.logic));
         });
-        let db_id = 0;
 
         Self {
             settings,
