@@ -8,10 +8,10 @@ use hnefatafl::game::state::GameState;
 use hnefatafl::pieces::Side;
 use hnefatafl::play::{Play, PlayEffects, PlayRecord};
 use sqlx::sqlite::SqliteRow;
-use crate::config::{GameSettings, Variant};
+use crate::config::GameSettings;
 use crate::error::DbError;
 use crate::gamectrl::Player;
-use crate::variants::OOTB_VARIANTS;
+use crate::variants::{Variant, OOTB_VARIANTS};
 
 const DB_PATH: &str = "sqlite://taflr.sqlite";
 
@@ -20,7 +20,8 @@ impl<'r> sqlx::FromRow<'r, SqliteRow> for Variant {
         Ok(Self {
             rules: serde_json::from_str(row.try_get("rules")?).expect("Bad JSON"),
             starting_board: row.try_get("starting_board")?,
-            name: row.try_get("name")?
+            name: row.try_get("name")?,
+            is_custom: row.try_get("is_custom")?,
         })
     }
 }
@@ -30,11 +31,11 @@ pub(crate) struct GameSettingsDbObject {
     game_settings: GameSettings,
 }
 
-impl<'r> sqlx::FromRow<'r, SqliteRow> for GameSettingsDbObject {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+impl<'r> GameSettingsDbObject {
+    fn from_row_and_variant(row: &'r SqliteRow, variant: Variant) -> Result<Self, Error> {
         let id = row.try_get("id")?;
         let game_settings = GameSettings {
-            variant: Variant::from_row(row)?,
+            variant,
             name: row.try_get("name")?,
             attacker: Player {
                 name: row.try_get("attacker_name")?,
@@ -84,19 +85,22 @@ impl DbController {
             self.add_variant(Variant {
                 rules,
                 starting_board: starting_board.to_string(),
-                name: name.to_string()
+                name: name.to_string(),
+                is_custom: false,
             }).await?;
         }
         Ok(())
     }
 
+    /// Initialise a new game in the database, from the given settings.
     pub(crate) async fn add_game(&mut self, settings: GameSettings) -> Result<i64, DbError> {
         let variant_name = settings.variant.name.to_string();
+        self.add_variant(settings.variant).await?;
         let att_ai_ttp = settings.attacker.ai_play_time.map(|d| d.as_secs_f64());
         let def_ai_ttp = settings.defender.ai_play_time.map(|d| d.as_secs_f64());
         Ok(sqlx::query!(
             r#"
-                INSERT OR REPLACE INTO games (
+                INSERT INTO games (
                     name,
                     variant_name,
                     turn,
@@ -239,11 +243,14 @@ impl DbController {
     }
 
     pub(crate) async fn load_settings(&self, id: i64) -> Result<GameSettings, DbError> {
-        let gso: GameSettingsDbObject = query_as(r"SELECT * FROM games WHERE id = ?")
+        let gs_row = query(r"SELECT * FROM games WHERE id = ?")
             .bind(id)
             .fetch_one(&self.pool)
             .await?;
-        Ok(gso.game_settings)
+        let variant_name = gs_row.try_get("variant_name")?;
+        let variant = self.load_variant(variant_name).await?;
+
+        Ok(GameSettingsDbObject::from_row_and_variant(&gs_row, variant)?.game_settings)
     }
 
     pub(crate) async fn add_variant(&mut self, variant: Variant) -> Result<i64, DbError> {
@@ -253,12 +260,21 @@ impl DbController {
                 INSERT OR IGNORE INTO variants (
                     name,
                     rules,
-                    starting_board
-                ) VALUES (?, ?, ?)
+                    starting_board,
+                    is_custom
+                ) VALUES (?, ?, ?, ?)
             "#,
             variant.name,
             rule_str,
-            variant.starting_board
+            variant.starting_board,
+            variant.is_custom
         ).execute(&self.pool).await?.last_insert_rowid())
+    }
+
+    pub(crate) async fn load_variant(&self, name: &str) -> Result<Variant, DbError> {
+        Ok(query_as(r"SELECT * FROM variants WHERE name = ?")
+            .bind(name)
+            .fetch_one(&self.pool)
+            .await?)
     }
 }

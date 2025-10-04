@@ -3,12 +3,14 @@ use std::ops::Deref;
 use std::time::Duration;
 use dioxus::prelude::*;
 use hnefatafl::preset;
-use crate::config::{GameSettings, Variant};
+use crate::config::GameSettings;
 use crate::error::DbError;
 use crate::gamectrl::Player;
 use crate::route::Route;
 use crate::sqlite::DbController;
+use crate::variants::Variant;
 
+#[derive(Debug)]
 enum GameCreationStatus {
     Setup,
     Creating(GameSettings),
@@ -61,7 +63,11 @@ fn CreatingGame(settings: GameSettings) -> Element {
     });
     match &*resource.read_unchecked() {
         Some(Ok(id)) => {
-            *STATUS.write() = GameCreationStatus::Created(*id);
+            println!("Switching status to Created");
+            let id = *id;
+            use_effect(move || {
+                *STATUS.write() = GameCreationStatus::Created(id)
+            });
             rsx! { "Game created in database, redirecting..." }
         },
         Some(Err(err)) => rsx! { "Error saving game to database: {err:#?}" },
@@ -112,6 +118,7 @@ pub(crate) fn GameSetup() -> Element {
             attacker,
             defender
         };
+        println!("Switching status to Creating");
         *STATUS.write() = GameCreationStatus::Creating(settings);
 
     };
@@ -321,6 +328,7 @@ pub(crate) fn GameSetup() -> Element {
 
 #[component]
 pub(crate) fn NewGame() -> Element {
+    println!("Rendering NewGame called, STATUS is {:#?}", STATUS);
     match *STATUS.read() {
         GameCreationStatus::Setup => rsx! {
             GameSetup {}
@@ -329,8 +337,12 @@ pub(crate) fn NewGame() -> Element {
             CreatingGame {settings: settings.clone()}
         },
         GameCreationStatus::Created(id) => {
-            let nav = navigator();
-            nav.push(Route::PlayGame { id });
+            println!("Switching status to Setup");
+            use_effect(move || {
+                *STATUS.write() = GameCreationStatus::Setup;
+                let nav = navigator();
+                nav.push(Route::PlayGame { id });
+            });
             rsx! { "Game created." }
         }
     }

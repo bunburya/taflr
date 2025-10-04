@@ -1,20 +1,9 @@
 use dioxus::prelude::*;
+use crate::components::navbutton::NavButton;
 use crate::route::Route;
 use crate::components::style::CommonStyles;
 
-#[component]
-fn NavButton(route: Route, text: &'static str) -> Element {
-    rsx! {
-        button {
-            class: "mainmenu-item",
-            onclick: move |_| {
-                let nav = navigator();
-                nav.push(route);
-            },
-            { text }
-        }
-    }
-}
+
 
 #[component]
 pub(crate) fn MainMenu() -> Element {
@@ -24,9 +13,10 @@ pub(crate) fn MainMenu() -> Element {
         h1 { "Main Menu" }
         div {
             class: "mainmenu",
-            NavButton { route: Route::NewGame, text: "New Game" }
-            NavButton { route: Route::LoadGame, text: "Load Game" }
-            NavButton { route: Route::About, text: "About" }
+            NavButton { route: Route::NewGame, class: "mainmenu-item", text: "New Game" }
+            NavButton { route: Route::LoadGame, class: "mainmenu-item", text: "Load Game" }
+            NavButton { route: Route::About, class: "mainmenu-item", text: "About" }
+            NavButton { route: Route::Quit, class: "mainmenu-item", text: "Quit"}
         }
     }
 }

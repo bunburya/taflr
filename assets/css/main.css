@@ -5,9 +5,11 @@ body {
     line-height: 1.6;
 }
 
-/* Default styling for buttons */
+/* Default styling for navigation links styled to look like buttons */
 
-button {
+.nav-button {
+    text-decoration: none;
+    text-align: center;
     padding: 1rem 2rem;
     background: var(--green);
     color: var(--ivory);
@@ -19,12 +21,12 @@ button {
     transition: all 0.3s ease;
 }
 
-button:hover {
+.nav-button:hover {
     background: var(--light-green);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px var(--shadow);
 }
 
-button:active {
+.nav-button:active {
     transform: translateY(0);
 }

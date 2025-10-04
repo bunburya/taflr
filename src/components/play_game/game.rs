@@ -32,8 +32,6 @@ async fn async_sleep(ms: u32) {
 pub(crate) fn Game(settings: GameSettings, game: HnGame<MediumBasicBoardState>, db_id: i64) -> Element {
     let game_ctrl = GameController::new(settings, game, db_id);
 
-    let db_ctrl = use_context::<DbController>();
-
     use_context_provider(move || game_ctrl);
 
     let ai_coroutine = use_coroutine(|mut rx: UnboundedReceiver<AiRequest<MediumBasicBoardState>>| async move {
@@ -66,17 +64,6 @@ pub(crate) fn Game(settings: GameSettings, game: HnGame<MediumBasicBoardState>, 
                 })
             };
         }
-    });
-
-    use_effect(move || {
-        let game_ctrl = use_context::<GameController>();
-        let mut db_ctrl = db_ctrl.clone();
-        let settings = game_ctrl.settings.clone();
-        spawn(async move {
-            if let Err(e) = db_ctrl.add_game(settings).await {
-                eprintln!("Error saving game: {:?}", e);
-            }
-        });
     });
 
     rsx! {

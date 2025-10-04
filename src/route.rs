@@ -1,6 +1,7 @@
 use dioxus::prelude::*;
 use hnefatafl::aliases::MediumBasicBoardState;
 use hnefatafl::game::Game;
+use crate::components;
 use crate::config::GameSettings;
 use crate::error::DbError;
 use crate::sqlite::DbController;
@@ -20,6 +21,8 @@ pub(crate) enum Route {
     PlayGame { id: i64 },
     #[route("/about")]
     About,
+    #[route("/quit")]
+    Quit,
 }
 
 #[component]
@@ -41,10 +44,18 @@ fn PlayGame(id: i64) -> Element {
     match &*resource.read_unchecked() {
         Some(Ok((gs, game))) => {
             rsx! {
-                "Gi"
+                components::Game { settings: gs.clone(), game: game.clone(), db_id: id }
             }
         },
         Some(Err(err)) => rsx! { "Error: {err:#?}" },
         None => rsx! { "Loading..." },
+    }
+}
+
+#[component]
+fn Quit() -> Element {
+    use_effect(|| {std::process::exit(0);});
+    rsx! {
+        "Quitting..."
     }
 }

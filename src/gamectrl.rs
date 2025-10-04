@@ -1,6 +1,7 @@
 use crate::ai::{Ai, BasicAi};
 use crate::aictrl::{AiResponse, AI};
 use crate::config::GameSettings;
+use crate::sqlite::DbController;
 use dioxus::prelude::*;
 use hnefatafl::aliases::{MediumBasicBoardState, MediumBasicGame};
 use hnefatafl::board::state::BoardState;
@@ -74,6 +75,19 @@ impl GameController {
             self.selected.set(None);
             self.movable.set(HashSet::new());
             self.last_move_time.set(Instant::now());
+            let pr_opt = self.game.read().play_history.last().copied();
+            if let Some(play_record) = pr_opt {
+                println!("handle_selection: found play record");
+                let state = self.game.read().state;
+                let db_ctrl: DbController = use_context();
+                let db_id = self.db_id;
+                println!("handle_selection: about to use effect");
+                let mut db_ctrl = db_ctrl.clone();
+                spawn(async move {
+                    db_ctrl.add_turn(db_id, play_record, state).await
+                        .expect("Failed to add turn to database");
+                });
+            }
         }
         play_res
     }
@@ -81,20 +95,16 @@ impl GameController {
     /// Handle the selection of a tile by the user, including, where necessary, processing a player
     /// move.
     pub fn handle_selection(&mut self, tile: Tile) {
+        println!("handle_selection called");
         if self.is_ai_turn() {
             return
         }
         if self.selected.read().is_some()
             && self.movable.read().contains(&tile) {
+            println!("handle_selection: moving");
             // unwrap safe because we have just checked
             let from_tile = self.selected.read().unwrap();
-            let play_res = self.game.write()
-                .do_play(Play::from_tiles(from_tile, tile).unwrap());
-            if let Ok(_) = play_res {
-                self.selected.set(None);
-                self.movable.set(HashSet::new());
-                self.last_move_time.set(Instant::now());
-            }
+            self.apply_play(Play::from_tiles(from_tile, tile).unwrap()).expect("Invalid play");
         } else {
             let game = self.game.read();
             let piece = game.state.board.get_piece(tile);
