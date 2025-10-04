@@ -1,17 +1,17 @@
-use std::str::FromStr;
-use std::time::Duration;
-use sqlx::{query, query_as, Error, Row, SqlitePool};
-use hnefatafl::board::state::BoardState;
-use hnefatafl::collections::{PieceMap};
-use hnefatafl::game::{Game, GameStatus};
-use hnefatafl::game::state::GameState;
-use hnefatafl::pieces::Side;
-use hnefatafl::play::{Play, PlayEffects, PlayRecord};
-use sqlx::sqlite::SqliteRow;
 use crate::config::GameSettings;
 use crate::error::DbError;
 use crate::gamectrl::Player;
 use crate::variants::{Variant, OOTB_VARIANTS};
+use hnefatafl::board::state::BoardState;
+use hnefatafl::collections::PieceMap;
+use hnefatafl::game::state::GameState;
+use hnefatafl::game::{Game, GameStatus};
+use hnefatafl::pieces::Side;
+use hnefatafl::play::{Play, PlayEffects, PlayRecord};
+use sqlx::sqlite::SqliteRow;
+use sqlx::{query, query_as, Error, Row, SqlitePool};
+use std::str::FromStr;
+use std::time::Duration;
 
 const DB_PATH: &str = "sqlite://taflr.sqlite";
 
@@ -125,6 +125,9 @@ impl DbController {
         state: &GameState<B>
     ) -> Result<i64, DbError> {
         let turn = state.turn as i64;
+        sqlx::query!("DELETE FROM states WHERE game_id = ? AND turn >= ?", game_id, turn)
+            .execute(&self.pool)
+            .await?;
         let board = state.board.to_fen();
         let side_to_play = state.side_to_play.to_string();
         let repetitions = serde_json::to_string(&state.repetitions)?;
@@ -155,6 +158,9 @@ impl DbController {
         board_len: u8,
         play_record: &PlayRecord<B>
     ) -> Result<i64, DbError> {
+        sqlx::query!("DELETE FROM play_records WHERE game_id = ? AND turn >= ?", game_id, turn)
+            .execute(&self.pool)
+            .await?;
         let side = play_record.side.to_string();
         let play = play_record.play.to_string();
         let captures = play_record.effects.captures.to_fen(board_len);
@@ -192,8 +198,17 @@ impl DbController {
         let turn = state.turn as i64;
         sqlx::query!("UPDATE games SET turn = ? WHERE id = ?", turn, game_id)
             .execute(&self.pool).await?;
-
         Ok((state_id, record_id))
+    }
+
+    pub(crate) async fn undo_turn(&mut self, game_id: i64) -> Result<i64, DbError> {
+        let turn = sqlx::query!(r"SELECT turn FROM games WHERE id = ?", game_id)
+            .fetch_one(&self.pool).await?.turn;
+        let prev_turn = turn - 1;
+        sqlx::query!(r"UPDATE games SET turn = ? WHERE id = ?", prev_turn, game_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(prev_turn)
     }
 
     pub(crate) async fn load_game<B: BoardState>(&self, id: i64) -> Result<(GameSettings, Game<B>), DbError> {

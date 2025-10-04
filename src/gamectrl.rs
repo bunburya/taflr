@@ -82,9 +82,8 @@ impl GameController {
                 let db_ctrl: DbController = use_context();
                 let db_id = self.db_id;
                 println!("handle_selection: about to use effect");
-                let mut db_ctrl = db_ctrl.clone();
                 spawn(async move {
-                    db_ctrl.add_turn(db_id, play_record, state).await
+                    db_ctrl.clone().add_turn(db_id, play_record, state).await
                         .expect("Failed to add turn to database");
                 });
             }
@@ -172,10 +171,11 @@ impl GameController {
         self.selected.set(None);
         self.movable.set(HashSet::new());
         self.last_move_time.set(Instant::now());
-    }
-
-    pub(crate) fn add_to_db(&self) {
-
+        let db_ctrl: DbController = use_context();
+        let db_id = self.db_id;
+        spawn(async move {
+            db_ctrl.clone().undo_turn(db_id).await.expect("Failed to undo turn");
+        });
     }
 
 }
