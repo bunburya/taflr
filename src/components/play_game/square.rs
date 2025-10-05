@@ -1,5 +1,6 @@
 use std::ops::Deref;
 use dioxus::prelude::*;
+use hnefatafl::aliases::MediumBasicBoardState;
 use hnefatafl::board::state::BoardState;
 use hnefatafl::pieces::BASIC_PIECES;
 use hnefatafl::rules::Ruleset;
@@ -16,7 +17,7 @@ fn display_throne(rules: Ruleset) -> bool {
 
 #[component]
 pub(crate) fn Square(tile: Tile) -> Element {
-    let mut game_ctrl = use_context::<GameController>();
+    let mut game_ctrl = use_context::<GameController<MediumBasicBoardState>>();
     let piece = game_ctrl.game.read().state.board.get_piece(tile);
     let mut classes = vec!["square"];
     let special_tiles = game_ctrl.game.read().logic.board_geo.special_tiles;

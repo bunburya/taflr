@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use hnefatafl::aliases::MediumBasicBoardState;
 use hnefatafl::board::state::BoardState;
 use hnefatafl::tiles::Tile;
 use crate::components::play_game::square::Square;
@@ -6,7 +7,7 @@ use crate::gamectrl::GameController;
 
 #[component]
 pub(crate) fn Board() -> Element {
-    let board_state = use_context::<GameController>().game.read().state.board;
+    let board_state = use_context::<GameController<MediumBasicBoardState>>().game.read().state.board;
     let side_len = board_state.side_len();
 
     rsx! {

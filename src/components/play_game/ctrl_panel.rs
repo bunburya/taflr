@@ -1,14 +1,13 @@
 use dioxus::prelude::*;
-use hnefatafl::aliases::MediumPlayRecord;
+use hnefatafl::aliases::{MediumBasicBoardState, MediumPlayRecord};
 use hnefatafl::pieces::Side;
-use crate::components::GAME_SETTINGS;
 use crate::components::navbutton::NavButton;
 use crate::gamectrl::GameController;
 use crate::route::Route;
 
 #[component]
 fn PlayerTh(side: Side) -> Element {
-    let game_ctrl = use_context::<GameController>();
+    let game_ctrl = use_context::<GameController<MediumBasicBoardState>>();
     let player = if side == Side::Attacker {
         game_ctrl.settings.attacker
     } else {
@@ -39,7 +38,7 @@ fn PlayerTh(side: Side) -> Element {
 #[component]
 fn PlayHistory(plays: Vec<MediumPlayRecord>) -> Element {
 
-    let game_ctrl = use_context::<GameController>();
+    let game_ctrl = use_context::<GameController<MediumBasicBoardState>>();
     let starting_side = game_ctrl.game.read().logic.rules.starting_side;
 
     // Group plays into pairs (attacker play, defender play)
@@ -95,7 +94,7 @@ fn PlayHistory(plays: Vec<MediumPlayRecord>) -> Element {
 #[component]
 pub(crate) fn ControlPanel() -> Element {
 
-    let game_ctrl = use_context::<GameController>();
+    let game_ctrl = use_context::<GameController<MediumBasicBoardState>>();
     let play_history = game_ctrl.game.read().play_history.clone();
     let side_to_play = game_ctrl.game.read().state.side_to_play;
     let mut att_cls = vec!["player-name"];
@@ -124,7 +123,7 @@ pub(crate) fn ControlPanel() -> Element {
                 button {
                     class: "ctrl-btn nav-button",
                     onclick: |_| {
-                        let mut game_ctrl = use_context::<GameController>();
+                        let mut game_ctrl = use_context::<GameController<MediumBasicBoardState>>();
                         game_ctrl.undo_last_play();
                     },
                     "Undo"

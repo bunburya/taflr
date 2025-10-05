@@ -1,15 +1,14 @@
 use crate::ai::{Ai, BasicAi};
 use crate::aictrl::{AiResponse, AI};
 use crate::config::GameSettings;
-use crate::sqlite::DbController;
 use dioxus::prelude::*;
 use hnefatafl::aliases::{MediumBasicBoardState, MediumBasicGame};
 use hnefatafl::board::state::BoardState;
 use hnefatafl::error::PlayInvalid;
 use hnefatafl::game::state::GameState;
-use hnefatafl::game::GameStatus;
+use hnefatafl::game::{Game, GameStatus};
 use hnefatafl::pieces::Side;
-use hnefatafl::play::{Play, ValidPlay};
+use hnefatafl::play::{Play, PlayRecord, ValidPlay};
 use hnefatafl::tiles::Tile;
 use std::collections::HashSet;
 #[cfg(not(target_arch = "wasm32"))]
@@ -34,14 +33,20 @@ impl Player {
     }
 }
 
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+pub(crate) enum Action<B: BoardState> {
+    Play(PlayRecord<B>),
+    Undo,
+}
+
 /// This struct contains certain information required to display the game and has methods to
 /// interact with the game.
 #[derive(Clone, Eq, PartialEq, Debug)]
-pub(crate) struct GameController {
+pub(crate) struct GameController<B: 'static + BoardState + Send> {
     /// The game settings.
     pub(crate) settings: GameSettings,
     /// A copy of the ongoing game (*not* the "source of truth"), wrapped in a signal.
-    pub(crate) game: Signal<MediumBasicGame>,
+    pub(crate) game: Signal<Game<B>>,
     /// The selected tile, if any, wrapped in a signal.
     pub(crate) selected: Signal<Option<Tile>>,
     /// The set of tiles that are accessible from the selected tile, wrapped in a signal.
@@ -50,10 +55,11 @@ pub(crate) struct GameController {
     pub(crate) last_move_time: Signal<Instant>,
     /// The `id` of the game in the database.
     pub(crate) db_id: i64,
+    /// The last action performed which impacted on the game state (for serialising to DB).
+    pub(crate) last_action: Signal<Option<Action<B>>>
 }
 
-impl GameController {
-
+impl GameController<MediumBasicBoardState> {
     pub(crate) fn new(settings: GameSettings, game: MediumBasicGame, db_id: i64) -> Self {
         use_effect(move || {
             *AI.write() = Some(BasicAi::new(game.logic));
@@ -65,9 +71,38 @@ impl GameController {
             selected: use_signal(|| None),
             movable: use_signal(HashSet::new),
             last_move_time: use_signal(Instant::now),
-            db_id
+            db_id,
+            last_action: use_signal(move || None)
         }
     }
+
+    pub async fn request_ai_play(&mut self) -> Option<(ValidPlay, GameState<MediumBasicBoardState>)> {
+        let game_state = self.game.read().state;
+        let ai_time = self.current_player().ai_play_time;
+        if let Some(ttp) = ai_time {
+            tokio::task::spawn_blocking(move || {
+                if let Ok((vp, _)) = AI.write().as_mut().unwrap().next_play(&game_state, ttp) {
+                    Some((vp, game_state))
+                } else {
+                    None
+                }
+            }).await.unwrap()
+        } else {
+            None
+        }
+    }
+
+    pub fn handle_ai_response(&mut self, ai_resp: AiResponse<MediumBasicBoardState>) -> Option<ValidPlay> {
+        if ai_resp.game_state == self.game.read().state {
+            Some(ai_resp.play)
+        } else {
+            None
+        }
+    }
+
+}
+
+impl<B: BoardState + Send> GameController<B> {
 
     pub(crate) fn apply_play(&mut self, play: Play) -> Result<GameStatus, PlayInvalid> {
         let play_res = self.game.write().do_play(play);
@@ -77,15 +112,7 @@ impl GameController {
             self.last_move_time.set(Instant::now());
             let pr_opt = self.game.read().play_history.last().copied();
             if let Some(play_record) = pr_opt {
-                println!("handle_selection: found play record");
-                let state = self.game.read().state;
-                let db_ctrl: DbController = use_context();
-                let db_id = self.db_id;
-                println!("handle_selection: about to use effect");
-                spawn(async move {
-                    db_ctrl.clone().add_turn(db_id, play_record, state).await
-                        .expect("Failed to add turn to database");
-                });
+                *self.last_action.write() = Some(Action::Play(play_record));
             }
         }
         play_res
@@ -142,40 +169,12 @@ impl GameController {
         Instant::now() - *self.last_move_time.read()
     }
 
-    pub async fn request_ai_play(&mut self) -> Option<(ValidPlay, GameState<MediumBasicBoardState>)> {
-        let game_state = self.game.read().state;
-        let ai_time = self.current_player().ai_play_time;
-        if let Some(ttp) = ai_time {
-            tokio::task::spawn_blocking(move || {
-                if let Ok((vp, _)) = AI.write().as_mut().unwrap().next_play(&game_state, ttp) {
-                    Some((vp, game_state))
-                } else {
-                    None
-                }
-            }).await.unwrap()
-        } else {
-            None
-        }
-    }
-
-    pub fn handle_ai_response(&mut self, ai_resp: AiResponse<MediumBasicBoardState>) -> Option<ValidPlay> {
-        if ai_resp.game_state == self.game.read().state {
-            Some(ai_resp.play)
-        } else {
-            None
-        }
-    }
-
     pub fn undo_last_play(&mut self) {
         self.game.write().undo_last_play();
         self.selected.set(None);
         self.movable.set(HashSet::new());
         self.last_move_time.set(Instant::now());
-        let db_ctrl: DbController = use_context();
-        let db_id = self.db_id;
-        spawn(async move {
-            db_ctrl.clone().undo_turn(db_id).await.expect("Failed to undo turn");
-        });
+        *self.last_action.write() = Some(Action::Undo);
     }
 
 }
