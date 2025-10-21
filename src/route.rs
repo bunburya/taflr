@@ -1,13 +1,8 @@
 use dioxus::prelude::*;
-use hnefatafl::aliases::MediumBasicBoardState;
-use hnefatafl::game::Game;
-use crate::components;
-use crate::config::GameSettings;
-use crate::error::DbError;
-use crate::sqlite::DbController;
 use crate::components::MainMenu;
 use crate::components::About;
 use crate::components::NewGame;
+use crate::components::PlayGame;
 
 #[derive(Routable, Clone, Copy, PartialEq)]
 pub(crate) enum Route {
@@ -32,25 +27,7 @@ fn LoadGame() -> Element {
     }
 }
 
-#[component]
-fn PlayGame(id: i64) -> Element {
-    let db_ctrl = use_context::<DbController>();
-    let resource: Resource<Result<(GameSettings, Game<MediumBasicBoardState>), DbError>> = use_resource(move || {
-        let db_ctrl = db_ctrl.clone();
-        async move {
-            db_ctrl.load_game::<MediumBasicBoardState>(id).await
-        }
-    });
-    match &*resource.read_unchecked() {
-        Some(Ok((gs, game))) => {
-            rsx! {
-                components::Game { settings: gs.clone(), game: game.clone(), db_id: id }
-            }
-        },
-        Some(Err(err)) => rsx! { "Error: {err:#?}" },
-        None => rsx! { "Loading..." },
-    }
-}
+
 
 #[component]
 fn Quit() -> Element {

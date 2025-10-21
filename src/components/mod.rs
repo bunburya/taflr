@@ -12,6 +12,6 @@ use crate::config::GameSettings;
 pub(crate) use new_game::NewGame;
 pub(crate) use about::About;
 pub(crate) use mainmenu::MainMenu;
-pub(crate) use play_game::game::Game;
+pub(crate) use play_game::PlayGame;
 
 pub(crate) static GAME_SETTINGS: GlobalSignal<Option<GameSettings>> = Signal::global(|| None);

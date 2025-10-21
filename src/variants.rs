@@ -39,6 +39,12 @@ impl FromStr for Variant {
                 name: "Tablut".to_string(),
                 is_custom: false
             }),
+            "Magpie" => Ok(Self {
+                rules: preset::rules::MAGPIE,
+                starting_board: preset::boards::MAGPIE.to_string(),
+                name: "Magpie".to_string(),
+                is_custom: false
+            }),
             other => Err(format!("Unknown variant: {}", other))
         }
     }

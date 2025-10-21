@@ -29,7 +29,7 @@ async fn async_sleep(ms: u32) {
 }
 
 #[component]
-pub(crate) fn Game(settings: GameSettings, game: HnGame<MediumBasicBoardState>, db_id: i64) -> Element {
+pub(crate) fn GameView(settings: GameSettings, game: HnGame<MediumBasicBoardState>, db_id: i64) -> Element {
     let game_ctrl = GameController::new(settings, game, db_id);
 
     use_context_provider(move || game_ctrl);
@@ -55,6 +55,7 @@ pub(crate) fn Game(settings: GameSettings, game: HnGame<MediumBasicBoardState>, 
 
     use_effect(|| {
         let game_ctrl = use_context::<GameController<MediumBasicBoardState>>();
+
         if let Some(time_to_play) = game_ctrl.current_player().ai_play_time {
             let game_state = game_ctrl.game.read().state;
             if game_state.status == GameStatus::Ongoing {
@@ -64,10 +65,7 @@ pub(crate) fn Game(settings: GameSettings, game: HnGame<MediumBasicBoardState>, 
                 })
             };
         }
-    });
 
-    use_effect(|| {
-        let game_ctrl = use_context::<GameController<MediumBasicBoardState>>();
         let action_opt = game_ctrl.last_action.read().as_ref().copied();
         if let Some(action) = action_opt {
             let db_ctrl: DbController = use_context();

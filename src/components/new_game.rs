@@ -170,6 +170,7 @@ pub(crate) fn GameSetup() -> Element {
                         option { value: "Copenhagen", "Copenhagen" }
                         option { value: "Brandubh", "Brandubh" }
                         option { value: "Tablut", "Tablut" }
+                        option { value: "Magpie", "Magpie" }
                     }
                 }
             }
