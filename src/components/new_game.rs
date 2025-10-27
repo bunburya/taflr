@@ -3,7 +3,8 @@ use std::ops::Deref;
 use std::time::Duration;
 use dioxus::prelude::*;
 use hnefatafl::preset;
-use crate::config::GameSettings;
+use crate::components::header_bar::HeaderBar;
+use crate::game_settings::GameSettings;
 use crate::error::DbError;
 use crate::gamectrl::Player;
 use crate::route::Route;
@@ -124,6 +125,11 @@ pub(crate) fn GameSetup() -> Element {
     };
 
     rsx! {
+
+        HeaderBar {
+            title: "New Game"
+        }
+
         div {
             class: "game-setup-container",
 

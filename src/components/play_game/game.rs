@@ -11,7 +11,7 @@ use crate::aictrl::{compute_ai_play, AiRequest};
 use crate::components;
 use crate::components::play_game::board::Board;
 use crate::components::play_game::ctrl_panel::ControlPanel;
-use crate::config::GameSettings;
+use crate::game_settings::GameSettings;
 use crate::gamectrl::{Action, GameController};
 use crate::sqlite::DbController;
 

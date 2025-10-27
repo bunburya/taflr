@@ -5,28 +5,26 @@ body {
     line-height: 1.6;
 }
 
-/* Default styling for navigation links styled to look like buttons */
+/* Default styling for action buttons and navigation links styled to look like buttons */
 
-.nav-button {
+.nav-button, .action-button {
     text-decoration: none;
     text-align: center;
-    padding: 1rem 2rem;
     background: var(--green);
     color: var(--ivory);
     border: none;
     border-radius: 8px;
-    font-size: 1.25rem;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
-.nav-button:hover {
+.nav-button:hover, .action-button:hover {
     background: var(--light-green);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px var(--shadow);
 }
 
-.nav-button:active {
+.nav-button:active, .action-button:active {
     transform: translateY(0);
 }

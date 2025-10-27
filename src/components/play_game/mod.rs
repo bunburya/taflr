@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 use hnefatafl::aliases::MediumBasicBoardState;
 use hnefatafl::game::Game;
 use crate::components::play_game::game::GameView;
-use crate::config::GameSettings;
+use crate::game_settings::GameSettings;
 use crate::error::DbError;
 use crate::sqlite::DbController;
 

@@ -3,6 +3,7 @@ use crate::components::MainMenu;
 use crate::components::About;
 use crate::components::NewGame;
 use crate::components::PlayGame;
+use crate::components::LoadGame;
 
 #[derive(Routable, Clone, Copy, PartialEq)]
 pub(crate) enum Route {
@@ -19,15 +20,6 @@ pub(crate) enum Route {
     #[route("/quit")]
     Quit,
 }
-
-#[component]
-fn LoadGame() -> Element {
-    rsx! {
-        h1 { "Load Game" }
-    }
-}
-
-
 
 #[component]
 fn Quit() -> Element {

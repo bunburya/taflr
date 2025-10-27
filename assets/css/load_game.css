@@ -1,0 +1,54 @@
+.saved-game-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    border: 1px solid var(--charcoal);
+    border-radius: 8px;
+    background-color: var(--primary-medium);
+    height: 80px;
+}
+
+.saved-game-name {
+    font-weight: bold;
+    width: 30%;
+    color: var(--ivory);
+}
+
+.saved-game-variant {
+    color: var(--ivory);
+    width: 20%;
+}
+
+.saved-game-player-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: 30%;
+}
+
+.saved-game-info-player {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    background-color: var(--primary-medium);
+    text-align: center;
+    color: var(--ivory);
+}
+
+.saved-game-info-player.current-player {
+    background-color: var(--primary-dark);
+    border: 2px solid var(--charcoal);
+    font-weight: bold;
+}
+
+.saved-game-button-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: 30%;
+}
+
+.saved-game-load-button, .saved-game-delete-button {
+    padding: 0.5rem 1rem;
+}

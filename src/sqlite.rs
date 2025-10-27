@@ -1,7 +1,8 @@
-use crate::config::GameSettings;
 use crate::error::DbError;
+use crate::game_settings::GameSettings;
 use crate::gamectrl::Player;
 use crate::variants::{Variant, OOTB_VARIANTS};
+use dioxus::prelude::Readable;
 use hnefatafl::board::state::BoardState;
 use hnefatafl::collections::PieceMap;
 use hnefatafl::game::state::GameState;
@@ -9,7 +10,7 @@ use hnefatafl::game::{Game, GameStatus};
 use hnefatafl::pieces::Side;
 use hnefatafl::play::{Play, PlayEffects, PlayRecord};
 use sqlx::sqlite::SqliteRow;
-use sqlx::{query, query_as, Error, Row, SqlitePool};
+use sqlx::{query, query_as, Error, FromRow, Row, SqlitePool};
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -55,15 +56,65 @@ impl<'r> GameSettingsDbObject {
     }
 }
 
+#[derive(FromRow)]
 pub(crate) struct DbGameRecord {
     id: u64,
     settings: GameSettings,
+    turn: u64,
     status: GameStatus,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct SavedGameInfo {
+    /// `id` of the game in the database.
+    pub(crate) id: i64,
+    /// Name of the saved game.
+    pub(crate) game_name: String,
+    /// Name of the variant.
+    pub(crate) variant_name: String,
+    /// Attacking player.
+    pub(crate) attacker: Player,
+    /// Defending player.
+    pub(crate) defender: Player,
+    /// Current board state.
+    pub(crate) board_state: String,
+    /// Current turn.
+    pub(crate) turn: u64,
+    /// Side to play.
+    pub(crate) side_to_play: Side,
+    /// Status of game.
+    pub(crate) status: GameStatus,
+}
+
+impl<'r> FromRow<'r, SqliteRow> for SavedGameInfo {
+    fn from_row(row: &'r SqliteRow) -> Result<Self, sqlx::Error> {
+        Ok(Self {
+            id: row.try_get("id")?,
+            game_name: row.try_get("game_name")?,
+            variant_name: row.try_get("variant_name")?,
+            attacker: Player {
+                name: row.try_get("attacker_name")?,
+                ai_play_time: row.try_get::<'_, Option<i64>, _>("attacker_ai_ttp")?
+                    .map(|s| Duration::from_secs(s as u64)),
+            },
+            defender: Player {
+                name: row.try_get("defender_name")?,
+                ai_play_time: row.try_get::<'_, Option<i64>, _>("defender_ai_ttp")?
+                    .map(|s| Duration::from_secs(s as u64)),
+            },
+            board_state: row.try_get("board")?,
+            turn: row.try_get::<i64, _>("turn")? as u64,
+            side_to_play: Side::from_str(row.try_get("side_to_play")?)
+                // TODO: Change to Decode when we implement Error for ParseError
+                .map_err(|_| sqlx::Error::RowNotFound)?,
+            status: serde_json::from_str(row.try_get("status")?).map_err(|e| sqlx::Error::Decode(Box::new(e)))?,
+        })
+    }
 }
 
 #[derive(Clone)]
 pub(crate) struct DbController {
-    pub (crate) pool: SqlitePool,
+    pub(crate) pool: SqlitePool,
 }
 
 impl DbController {
@@ -291,5 +342,39 @@ impl DbController {
             .bind(name)
             .fetch_one(&self.pool)
             .await?)
+    }
+
+    pub(crate) async fn load_saved_game_info(&mut self) -> Result<Vec<SavedGameInfo>, DbError> {
+        Ok(query_as(r#"
+            SELECT
+                games.id,
+                games.name as game_name,
+                variants.name as variant_name,
+                games.attacker_name,
+                games.attacker_ai_ttp,
+                games.defender_name,
+                games.defender_ai_ttp,
+                states.board,
+                states.turn,
+                states.side_to_play,
+                states.status
+            FROM games
+            INNER JOIN states ON states.game_id = games.id
+            INNER JOIN variants ON games.variant_name = variants.name
+            WHERE states.turn = (
+                SELECT MAX(turn)
+                FROM states
+                WHERE game_id = games.id
+            )
+        "#)
+            .fetch_all(&self.pool)
+            .await?)
+    }
+
+    pub(crate) async fn delete_game_from_db(&self, id: i64) -> Result<(), DbError> {
+        query!(r"DELETE FROM games WHERE id = ?", id).execute(&self.pool).await?;
+        query!(r"DELETE FROM states WHERE game_id = ?", id).execute(&self.pool).await?;
+        query!(r"DELETE FROM play_records WHERE game_id = ?", id).execute(&self.pool).await?;
+        Ok(())
     }
 }

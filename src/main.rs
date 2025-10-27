@@ -1,7 +1,7 @@
 mod components;
 mod ai;
 mod gamectrl;
-mod config;
+mod game_settings;
 mod aictrl;
 mod sqlite;
 mod error;
@@ -28,6 +28,7 @@ fn Style() -> Element {
         document::Stylesheet { href: asset!("/assets/css/main.css") }
         document::Stylesheet { href: asset!("/assets/css/game.css") }
         document::Stylesheet { href: asset!("/assets/css/game_setup.css") }
+        document::Stylesheet { href: asset!("/assets/css/header_bar.css") }
     }
 }
 

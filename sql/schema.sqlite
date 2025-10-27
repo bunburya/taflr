@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS play_records (
     play TEXT NOT NULL,
     captures TEXT,
     game_outcome TEXT,
-    FOREIGN KEY(game_id) REFERENCES games(id),
+    FOREIGN KEY(game_id) REFERENCES games(id) ON DELETE CASCADE,
     UNIQUE(game_id, turn)
 );
 
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS states (
     repetitions TEXT NOT NULL,
     plays_since_capture INTEGER NOT NULL,
     status TEXT NOT NULL,
-    FOREIGN KEY(game_id) REFERENCES games(id),
+    FOREIGN KEY(game_id) REFERENCES games(id) ON DELETE CASCADE,
     UNIQUE(game_id, turn)
 );
 

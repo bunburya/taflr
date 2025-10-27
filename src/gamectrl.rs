@@ -1,6 +1,6 @@
 use crate::ai::{Ai, BasicAi};
 use crate::aictrl::{AiResponse, AI};
-use crate::config::GameSettings;
+use crate::game_settings::GameSettings;
 use dioxus::prelude::*;
 use hnefatafl::aliases::{MediumBasicBoardState, MediumBasicGame};
 use hnefatafl::board::state::BoardState;
