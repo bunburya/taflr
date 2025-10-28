@@ -1,6 +1,7 @@
 use dioxus::prelude::*;
 use hnefatafl::pieces::Side;
 use crate::components::navbutton::NavButton;
+use crate::message::error_msg;
 use crate::route::Route;
 use crate::sqlite::{DbController, SavedGameInfo};
 
@@ -72,8 +73,11 @@ pub(crate) fn LoadGame() -> Element {
         let id_opt = *to_delete.read();
         if let Some(id) = id_opt {
             spawn(async move {
-                db_ctrl.delete_game_from_db(id).await.expect("Failed to delete game from database.");
-                saved_games.write().retain(|sg| sg.id != id);
+                match db_ctrl.delete_game_from_db(id).await {
+                    Ok(_) => saved_games.write().retain(|sg| sg.id != id),
+                    Err(e) => error_msg(format!("Failed to delete saved game from database: {e:?}").as_str())
+                };
+
             });
         };
     });
@@ -81,22 +85,13 @@ pub(crate) fn LoadGame() -> Element {
     use_effect(move || {
         let mut db_ctrl = use_context::<DbController>();
         spawn(async move {
-            let loaded = db_ctrl.load_saved_game_info().await.expect("Failed to load saved games from database.");
-            saved_games.set(loaded);
+            match db_ctrl.load_saved_game_info().await {
+                Ok(loaded) => saved_games.set(loaded),
+                Err(e) => error_msg(format!("Failed to load saved games from database: {e:?}").as_str())
+            }
         });
     });
 
-    // match &*resource.read_unchecked() {
-    //     Some(Ok(db_saved_games)) => {
-    //         *saved_games.write() = db_saved_games.clone();
-    //         rsx! {
-    //             document::Stylesheet { href: asset!("/assets/css/load_game.css") }
-    //             SavedGameList { saved_games: saved_games, to_delete: to_delete }
-    //         }
-    //     },
-    //     Some(Err(err)) => rsx! { "Error: {err:#?}" },
-    //     None => rsx! { "Loading..." },
-    // }
     rsx! {
         document::Stylesheet { href: asset!("/assets/css/load_game.css") }
         SavedGameList { saved_games: saved_games, to_delete: to_delete }

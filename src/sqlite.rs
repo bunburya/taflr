@@ -2,7 +2,6 @@ use crate::error::DbError;
 use crate::game_settings::GameSettings;
 use crate::gamectrl::Player;
 use crate::variants::{Variant, OOTB_VARIANTS};
-use dioxus::prelude::Readable;
 use hnefatafl::board::state::BoardState;
 use hnefatafl::collections::PieceMap;
 use hnefatafl::game::state::GameState;

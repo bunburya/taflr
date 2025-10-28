@@ -13,6 +13,7 @@ use crate::components::play_game::board::Board;
 use crate::components::play_game::ctrl_panel::ControlPanel;
 use crate::game_settings::GameSettings;
 use crate::gamectrl::{Action, GameController};
+use crate::message::{error_msg, warning_msg};
 use crate::sqlite::DbController;
 
 #[cfg(target_arch = "wasm32")]
@@ -43,10 +44,12 @@ pub(crate) fn GameView(settings: GameSettings, game: HnGame<MediumBasicBoardStat
             match response {
                 Ok(resp) => {
                     if let Some(ai_move) = game_ctrl.handle_ai_response(resp) {
-                        game_ctrl.apply_play(ai_move.play).expect("Invalid AI play");
+                        if let Err(e) = game_ctrl.apply_play(ai_move.play) {
+                            warning_msg(format!("AI gave invalid play: {e:?}").as_str())
+                        }
                     }
                 },
-                Err(e) => println!("Error: {}", e)
+                Err(e) => error_msg(format!("Error: {e}").as_str())
             }
         }
     });
@@ -74,12 +77,17 @@ pub(crate) fn GameView(settings: GameSettings, game: HnGame<MediumBasicBoardStat
                 Action::Play(play) => {
                     let state = game_ctrl.game.read().state;
                     spawn(async move {
-                        db_ctrl.clone().add_turn(db_id, play, state).await
-                            .expect("Failed to add turn to database");
+                        if let Err(e) = db_ctrl.clone().add_turn(db_id, play, state).await {
+                            error_msg(format!("Failed to add move to database: {e:?}").as_str());
+                            game_ctrl.clone().undo_last_play(true);
+                        }
                     });
                 },
                 Action::Undo => {
                     spawn(async move {
+                        // TODO: Once `Game::undo_last_play` in the `hnefatafl` crate is modified to
+                        // return the undone play, we should modify this to check the outcome of
+                        // `undo_turn` and re-apply the play locally if it failed.
                         db_ctrl.clone().undo_turn(db_id).await
                             .expect("Failed to undo turn in database");
                     });

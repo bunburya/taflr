@@ -1,23 +1,33 @@
 /* Global styles */
 
 :root {
-    /* Primary Colors */
+    /* Primary colours */
     --primary-dark: #3c2415;
     --primary-medium: #8b4513;
     --primary-light: #deb887;
     --primary-lightest: #f5deb3;
 
-    /* Accent Colors */
+    /* Accent colours */
     --green: #2d5016;
     --light-green: #87a96b;
     --brown: #654321;
     --amber: #ffbf00;
 
-    /* Neutral Colors */
+    /* Neutral colours */
     --cream: #faf0e6;
     --ivory: #fffff0;
     --charcoal: #36454f;
     --shadow: rgba(60, 36, 21, 0.3);
+
+    /* Functional colours */
+    --error-color: #d32f2f;
+    --warning-color: #f57c00;
+    --success-color: #388e3c;
+    --info-color: var(--charcoal);
+    --error-bg: rgba(211, 47, 47, 0.1);
+    --warning-bg: rgba(245, 124, 0, 0.1);
+    --success-bg: rgba(56, 142, 60, 0.1);
+    --info-bg: var(--ivory);
 
     /* Typography */
     --font-primary: 'Trebuchet MS', 'Lucida Grande', sans-serif;

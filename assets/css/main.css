@@ -28,3 +28,32 @@ body {
 .nav-button:active, .action-button:active {
     transform: translateY(0);
 }
+
+.status-bar-error, .status-bar-warning, .status-bar-info {
+    padding: 10px;
+    margin-bottom: 10px;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    color: var(--charcoal);
+}
+
+.status-bar-error {
+    background-color: var(--error-bg);
+    color: var(--error-color);
+    font-weight: bold;
+}
+
+.status-bar-warning {
+    background-color: var(--warning-bg);
+    color: var(--warning-color);
+    font-weight: bold;
+}
+
+.status-bar-info {
+    background-color: var(--info-bg);
+}
+
+.status-bar-none {
+    display: none;
+}

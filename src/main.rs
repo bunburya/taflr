@@ -7,8 +7,10 @@ mod sqlite;
 mod error;
 mod variants;
 mod route;
+mod message;
 
 use dioxus::prelude::*;
+use crate::components::StatusBar;
 use crate::error::DbError;
 use crate::route::Route;
 use crate::sqlite::DbController;
@@ -59,6 +61,7 @@ fn App() -> Element {
             rsx! {
                 Style {}
                 Router::<Route> {}
+                StatusBar {}
             }
         },
         Some(Err(err)) => rsx! { "Error: {err:#?}" },

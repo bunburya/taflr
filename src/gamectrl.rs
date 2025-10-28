@@ -15,6 +15,7 @@ use std::collections::HashSet;
 use std::time::{Duration, Instant};
 #[cfg(target_arch = "wasm32")]
 use web_time::{Duration, Instant};
+use crate::message::{error_msg, warning_msg};
 
 /// Information about a player
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -130,7 +131,9 @@ impl<B: BoardState + Send> GameController<B> {
             println!("handle_selection: moving");
             // unwrap safe because we have just checked
             let from_tile = self.selected.read().unwrap();
-            self.apply_play(Play::from_tiles(from_tile, tile).unwrap()).expect("Invalid play");
+            if let Err(e) = self.apply_play(Play::from_tiles(from_tile, tile).unwrap()) {
+                warning_msg(format!("Invalid play: {e:?}").as_str())
+            }
         } else {
             let game = self.game.read();
             let piece = game.state.board.get_piece(tile);
@@ -169,12 +172,16 @@ impl<B: BoardState + Send> GameController<B> {
         Instant::now() - *self.last_move_time.read()
     }
 
-    pub fn undo_last_play(&mut self) {
+    /// Undo the last play. If `local_only` is `true`, the last play will only be undone locally,
+    /// and not in the database.
+    pub fn undo_last_play(&mut self, local_only: bool) {
         self.game.write().undo_last_play();
         self.selected.set(None);
         self.movable.set(HashSet::new());
         self.last_move_time.set(Instant::now());
-        *self.last_action.write() = Some(Action::Undo);
+        if !local_only {
+            *self.last_action.write() = Some(Action::Undo);
+        }
     }
 
 }

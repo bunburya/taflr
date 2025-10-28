@@ -124,7 +124,7 @@ pub(crate) fn ControlPanel() -> Element {
                     class: "action-button ctrl-btn nav-button",
                     onclick: |_| {
                         let mut game_ctrl = use_context::<GameController<MediumBasicBoardState>>();
-                        game_ctrl.undo_last_play();
+                        game_ctrl.undo_last_play(false);
                     },
                     "Undo"
                 }
