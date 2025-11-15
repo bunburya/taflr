@@ -28,7 +28,6 @@ CREATE TABLE IF NOT EXISTS states (
     turn INTEGER NOT NULL,
     board TEXT NOT NULL,
     side_to_play TEXT NOT NULL,
-    repetitions TEXT NOT NULL,
     plays_since_capture INTEGER NOT NULL,
     status TEXT NOT NULL,
     FOREIGN KEY(game_id) REFERENCES games(id) ON DELETE CASCADE,

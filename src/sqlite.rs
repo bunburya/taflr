@@ -1,10 +1,11 @@
+use std::iter::zip;
 use crate::error::DbError;
 use crate::game_settings::GameSettings;
 use crate::gamectrl::Player;
 use crate::variants::{Variant, OOTB_VARIANTS};
 use hnefatafl::board::state::BoardState;
 use hnefatafl::collections::PieceMap;
-use hnefatafl::game::state::GameState;
+use hnefatafl::game::state::{GameState, Position};
 use hnefatafl::game::{Game, GameStatus};
 use hnefatafl::pieces::Side;
 use hnefatafl::play::{Play, PlayEffects, PlayRecord};
@@ -111,6 +112,19 @@ impl<'r> FromRow<'r, SqliteRow> for SavedGameInfo {
     }
 }
 
+/// Generate position history (back to most recent capturing play) from play and state history.
+fn gen_posn_history<B: BoardState>(plays: &[PlayRecord<B>], states: &[GameState<B>]) -> Vec<Position<B>> {
+    let mut posn_history: Vec<Position<B>> = vec![];
+    for (pr, gs) in zip(plays.iter().rev(), states.iter().rev()) {
+        if !pr.effects.captures.is_empty() {
+            return posn_history
+        } else {
+            posn_history.push(gs.into());
+        }
+    }
+    posn_history
+}
+
 #[derive(Clone)]
 pub(crate) struct DbController {
     pub(crate) pool: SqlitePool,
@@ -180,7 +194,6 @@ impl DbController {
             .await?;
         let board = state.board.to_fen();
         let side_to_play = state.side_to_play.to_string();
-        let repetitions = serde_json::to_string(&state.repetitions)?;
         let plays_since_capture = state.plays_since_capture as i64;
         let status = serde_json::to_string(&state.status)?;
         Ok(sqlx::query!(
@@ -190,12 +203,11 @@ impl DbController {
                     turn,
                     board,
                     side_to_play,
-                    repetitions,
                     plays_since_capture,
                     status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?)
             "#,
-            game_id, turn, board, side_to_play, repetitions, plays_since_capture, status
+            game_id, turn, board, side_to_play, plays_since_capture, status
         )
             .execute(&self.pool)
             .await?.last_insert_rowid())
@@ -274,7 +286,6 @@ impl DbController {
                 turn: r.try_get::<i64, _>("turn")? as usize,
                 board: B::from_fen(r.try_get("board")?)?,
                 side_to_play: Side::from_str(r.try_get("side_to_play")?)?,
-                repetitions: serde_json::from_str(r.try_get("repetitions")?)?,
                 plays_since_capture: r.try_get::<i64, _>("plays_since_capture")? as usize,
                 status: serde_json::from_str(r.try_get("status")?)?
             }))
@@ -295,6 +306,7 @@ impl DbController {
                 }
             }))
             .collect::<Result<_, DbError>>()?;
+        let posn_history = gen_posn_history(&play_history, &state_history);
         let mut game = Game::new(
             game_settings.variant.rules,
             game_settings.variant.starting_board.as_str(),
@@ -304,6 +316,7 @@ impl DbController {
             game.state = *s;
         }
         game.state_history = state_history;
+        game.position_history = posn_history;
         Ok((game_settings, game))
     }
 

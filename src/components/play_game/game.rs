@@ -61,9 +61,11 @@ pub(crate) fn GameView(settings: GameSettings, game: HnGame<MediumBasicBoardStat
 
         if let Some(time_to_play) = game_ctrl.current_player().ai_play_time {
             let game_state = game_ctrl.game.read().state;
+            let posn_history = game_ctrl.game.read().position_history.clone();
             if game_state.status == GameStatus::Ongoing {
                 use_context::<Coroutine<AiRequest<MediumBasicBoardState>>>().send(AiRequest {
                     game_state,
+                    posn_history,
                     time_to_play
                 })
             };

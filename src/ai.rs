@@ -1,7 +1,7 @@
 use crate::ai::AiError::NoPlayAvailable;
 use hnefatafl::board::state::BoardState;
 use hnefatafl::game::logic::GameLogic;
-use hnefatafl::game::state::GameState;
+use hnefatafl::game::state::{GameState, Position};
 use hnefatafl::game::GameOutcome::{Draw, Win};
 use hnefatafl::game::GameStatus::{Ongoing, Over};
 use hnefatafl::pieces;
@@ -183,6 +183,7 @@ pub trait Ai {
     fn next_play(
         &mut self,
         game_state: &GameState<Self::BoardState>,
+        posn_history: &[Position<Self::BoardState>],
         time_to_play: Duration
     ) -> Result<(ValidPlay, Vec<String>), AiError>;
 }
@@ -273,11 +274,7 @@ impl<T: BoardState> BasicAi<T> {
         }
 
         let mut score = self.eval_board(&state.board);
-            
-        // Penalise repetitions
-        score -= (state.repetitions.get_repetitions(Attacker) * 10) as i32;
-        score += (state.repetitions.get_repetitions(Defender) * 10) as i32;
-        
+
         score
     }
     
@@ -351,10 +348,11 @@ impl<T: BoardState> BasicAi<T> {
         maximize: bool,
         mut alpha: i32,
         mut beta: i32,
+        posn_history: &mut Vec<Position<T>>,
         stats: &mut SearchStats
     ) -> (i32, Option<ValidPlay>) {
         stats.states += 1;
-        let state = self.logic.do_valid_play(play, starting_state).new_state;
+        let state = self.logic.do_valid_play(play, starting_state, Some(posn_history)).new_state;
         let hash = self.zt.hash(state.board, state.side_to_play);
         
         if let Some(tt_entry) = self.tt.probe(hash) {
@@ -391,10 +389,21 @@ impl<T: BoardState> BasicAi<T> {
 
         let tt_play = self.tt.probe(hash).and_then(|entry| entry.best_play);
         let plays = self.order_plays(plays, &state, tt_play);
-        
+
+        posn_history.push((&state).into());
+
         if maximize {
             for p in plays {
-                let (score, _) = self.minimax(p, state, depth-1, false, alpha, beta, stats);
+                let (score, _) = self.minimax(
+                    p,
+                    state,
+                    depth-1,
+                    false,
+                    alpha,
+                    beta,
+                    posn_history,
+                    stats
+                );
                 if score > best_score {
                     node_type = NodeType::Exact;
                     best_score = score;
@@ -410,7 +419,16 @@ impl<T: BoardState> BasicAi<T> {
             }
         } else {
             for p in plays {
-                let (score, _) = self.minimax(p, state, depth-1, true, alpha, beta, stats);
+                let (score, _) = self.minimax(
+                    p,
+                    state,
+                    depth-1,
+                    true,
+                    alpha,
+                    beta,
+                    posn_history,
+                    stats
+                );
                 if score < best_score {
                     node_type = NodeType::Exact;
                     best_score = score;
@@ -428,6 +446,8 @@ impl<T: BoardState> BasicAi<T> {
         
         // Store in transposition table
         self.tt.insert(hash, depth, best_score, node_type, best_play, stats);
+
+        posn_history.pop();
         
         (best_score, best_play)
     }
@@ -439,13 +459,14 @@ impl<T: BoardState> BasicAi<T> {
         state: GameState<T>,
         maximize: bool,
         stats: &mut SearchStats,
+        posn_history: &mut Vec<Position<T>>,
         cutoff_time: Instant
     ) -> (Option<ValidPlay>, i32, bool) {
         
         let mut plays: Vec<(ValidPlay, GameState<T>)> = Vec::new();
         for t in state.board.occupied_by_side(state.side_to_play) {
             for p in self.logic.iter_plays(t, &state).expect("Could not iterate plays") {
-                let next_state = self.logic.do_valid_play(p, state).new_state;
+                let next_state = self.logic.do_valid_play(p, state, Some(posn_history)).new_state;
                 plays.push((p, next_state));
             }
         }
@@ -453,13 +474,24 @@ impl<T: BoardState> BasicAi<T> {
         let mut best_score = if maximize { i32::MIN } else { i32::MAX };
         let mut best_play: Option<ValidPlay> = None;
         
-        for (play, _) in plays {
+        for (play, next_state) in plays {
             if Instant::now() > cutoff_time {
                 return (best_play, best_score, true);
             }
+            posn_history.push((&next_state).into());
             // Not really sure why we need to negate maximize here but the algo definitely
             // performs better when we do...
-            let (score, _) = self.minimax(play, state, depth, !maximize, i32::MIN, i32::MAX, stats);
+            let (score, _) = self.minimax(
+                play,
+                state,
+                depth,
+                !maximize,
+                i32::MIN,
+                i32::MAX,
+                posn_history,
+                stats
+            );
+            posn_history.pop();
             if (maximize && (score > best_score)) || (!maximize && (score < best_score)) {
                 best_score = score;
                 best_play = Some(play);
@@ -474,6 +506,7 @@ impl<T: BoardState> BasicAi<T> {
         state: GameState<T>,
         maximize: bool,
         stats: &mut SearchStats,
+        posn_history: &mut Vec<Position<T>>,
         time_to_play: Duration
     ) -> (Option<ValidPlay>, i32) {
         self.tt.new_search();
@@ -487,6 +520,7 @@ impl<T: BoardState> BasicAi<T> {
                 state,
                 maximize,
                 stats,
+                posn_history,
                 start_time + time_to_play
             );
             if let Some(p) = play {
@@ -515,15 +549,23 @@ impl<T: BoardState> Ai for BasicAi<T> {
 
     type BoardState = T;
 
-    fn next_play(&mut self, game_state: &GameState<T>, time_to_play: Duration) -> Result<(ValidPlay, Vec<String>), AiError> {
+    fn next_play(
+        &mut self,
+        game_state: &GameState<T>,
+        posn_history: &[Position<T>],
+        time_to_play: Duration
+    ) -> Result<(ValidPlay, Vec<String>), AiError> {
         let mut stats = SearchStats::default();
+        let mut posns = Vec::with_capacity(200);
+        posns.extend_from_slice(posn_history);
         let start_time = Instant::now();
         let side = game_state.side_to_play;
         let (best_play, best_score) = self.iddfs(
             *game_state, 
             side == Attacker,
             &mut stats,
-            time_to_play
+            &mut posns,
+            time_to_play,
         );
         
         let log_lines: Vec<String> = vec![

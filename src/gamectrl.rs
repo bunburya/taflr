@@ -1,6 +1,7 @@
 use crate::ai::{Ai, BasicAi};
 use crate::aictrl::{AiResponse, AI};
 use crate::game_settings::GameSettings;
+use crate::message::warning_msg;
 use dioxus::prelude::*;
 use hnefatafl::aliases::{MediumBasicBoardState, MediumBasicGame};
 use hnefatafl::board::state::BoardState;
@@ -15,7 +16,6 @@ use std::collections::HashSet;
 use std::time::{Duration, Instant};
 #[cfg(target_arch = "wasm32")]
 use web_time::{Duration, Instant};
-use crate::message::{error_msg, warning_msg};
 
 /// Information about a player
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -79,10 +79,15 @@ impl GameController<MediumBasicBoardState> {
 
     pub async fn request_ai_play(&mut self) -> Option<(ValidPlay, GameState<MediumBasicBoardState>)> {
         let game_state = self.game.read().state;
+        let posn_history = self.game.read().position_history.clone();
         let ai_time = self.current_player().ai_play_time;
         if let Some(ttp) = ai_time {
             tokio::task::spawn_blocking(move || {
-                if let Ok((vp, _)) = AI.write().as_mut().unwrap().next_play(&game_state, ttp) {
+                if let Ok((vp, _)) = AI.write().as_mut().unwrap().next_play(
+                    &game_state,
+                    &posn_history,
+                    ttp
+                ) {
                     Some((vp, game_state))
                 } else {
                     None

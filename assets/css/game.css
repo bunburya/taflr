@@ -1,8 +1,8 @@
-/* Board */
+/* Container for the entire game */
 
 .game-container {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     width: 100%;
     height: 100%;
 }
@@ -10,8 +10,9 @@
 /* "Frame" around the board, including row and col labels */
 .board-frame {
     display: grid;
-    width: 65%;
-    height: 100%;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
     background-color: var(--primary-dark);
     grid-template-columns: 0.5fr repeat(var(--board-size), 1fr) 0.5fr;
     grid-template-rows: 0.5fr repeat(var(--board-size), 1fr) 0.5fr;
@@ -73,18 +74,23 @@
 .ctrl-panel {
     display: flex;
     flex-direction: column;
-    width: 35%;
-    max-width: 35%;
+    width: 100%;
+    max-width: none;
+    margin-top: 20px;
 }
 
 .ctrl-btn-container {
     display: flex;
+    flex-direction: row;
     gap: 10px;
-    margin: 10px 0;
+    margin: 15px 0;
+    justify-content: center;
 }
 
 .ctrl-btn {
     flex: 1;
+    max-width: 150px;
+    padding: 10px;
 }
 
 /* Game info (part of control panel) */
@@ -93,9 +99,11 @@
     font-weight: bold;
     font-size: 110%;
 }
+
 .play-history th {
     font-weight: normal;
 }
+
 .current-player {
     font-weight: bold !important;
 }
@@ -104,6 +112,8 @@
     border-collapse: collapse;
     width: 100%;
     table-layout: fixed;
+    font-size: 14px;
+    margin-top: 15px;
 }
 
 .play-history th:nth-child(1),
@@ -123,13 +133,15 @@
 
 .play-history th,
 .play-history td {
-    border: 1px solid #ccc;
+    border: 1px solid var(--ivory);
     text-align: center;
+    padding: 4px 6px;
+    font-size: 12px;
 }
 
 .play-history th {
     background-color: var(--primary-dark);
-    color: var(--cream);
+    color: var(--ivory);
     font-weight: normal;
 }
 
@@ -151,47 +163,42 @@
     font-weight: bold;
 }
 
-/* Mobile styles */
-@media (max-width: 768px) {
+/* Tablet and desktop styles */
+@media (min-width: 769px) {
     .game-container {
-        flex-direction: column;
-    }
-    
-    .board-frame {
-        width: 100%;
-        height: auto;
-        aspect-ratio: 1;
-    }
-    
-    .ctrl-panel {
-        width: 100%;
-        max-width: none;
-        margin-top: 20px;
-        flex-direction: column;
-    }
-    
-    .ctrl-btn-container {
-        display: flex;
         flex-direction: row;
-        gap: 10px;
-        margin: 15px 0;
-        justify-content: center;
     }
-    
+
+    .board-frame {
+        width: 65%;
+        height: 100%;
+        aspect-ratio: unset;
+    }
+
+    .ctrl-panel {
+        width: 35%;
+        max-width: 35%;
+        margin-top: 0;
+    }
+
+    .ctrl-btn-container {
+        margin: 10px 0;
+        justify-content: flex-start;
+    }
+
     .ctrl-btn {
-        flex: 1;
-        max-width: 150px;
-        padding: 10px;
+        max-width: none;
+        padding: unset;
     }
-    
+
     .play-history {
-        font-size: 14px;
-        margin-top: 15px;
+        font-size: unset;
+        margin-top: 0;
     }
-    
+
     .play-history th,
     .play-history td {
-        padding: 4px 6px;
-        font-size: 12px;
+        padding: unset;
+        font-size: unset;
     }
 }

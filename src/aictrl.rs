@@ -1,16 +1,17 @@
 use crate::ai::{Ai, BasicAi};
-use dioxus::prelude::{Readable, Signal};
+use dioxus::prelude::{ReadableExt, Signal};
 use dioxus::signals::GlobalSignal;
+use hnefatafl::aliases::MediumBasicBoardState;
 use hnefatafl::board::state::BoardState;
-use hnefatafl::game::state::GameState;
+use hnefatafl::game::state::{GameState, Position};
 use hnefatafl::play::ValidPlay;
 use std::time::Duration;
-use hnefatafl::aliases::MediumBasicBoardState;
 
 pub static AI: GlobalSignal<Option<BasicAi<MediumBasicBoardState>>> = Signal::global(|| None);
 
 pub(crate) struct AiRequest<B: BoardState> {
     pub(crate) game_state: GameState<B>,
+    pub(crate) posn_history: Vec<Position<B>>,
     pub(crate) time_to_play: Duration,
 }
 
@@ -26,7 +27,7 @@ pub(crate) async fn compute_ai_play(request: AiRequest<MediumBasicBoardState>) -
     std::thread::spawn(move || {
         match ai_clone {
             Some(mut ai) => {
-                match ai.next_play(&request.game_state, request.time_to_play) {
+                match ai.next_play(&request.game_state, &request.posn_history, request.time_to_play) {
                     Ok((ai_play, _)) => tx.send(Ok(AiResponse {
                         game_state: request.game_state,
                         play: ai_play
