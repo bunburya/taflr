@@ -126,126 +126,194 @@ pub(crate) fn GameSetup() -> Element {
 
     rsx! {
 
-        HeaderBar {
-            title: "New Game"
-        }
-
         div {
-            class: "game-setup-container",
+            class: "main-container",
 
-            h1 {
-                class: "setup-title",
-                "Game Setup"
+            HeaderBar {
+                title: "New Game"
             }
 
             div {
-                class: "setup-section",
+                class: "game-setup-container",
 
                 div {
-                    class: "form-group",
-                    label {
-                        class: "form-label",
-                        "Name:"
-                    }
-                    input {
-                        class: "form-input",
-                        r#type: "text",
-                        value: "{game_name}",
-                        oninput: move |e| {
-                            game_name.set(e.value());
-                            game_name_changed.set(true);
-                        }
-                    }
-                }
-
-                div {
-                    class: "form-group",
-                    label {
-                        class: "form-label",
-                        "Ruleset:"
-                    }
-                    select {
-                        class: "form-select",
-                        onchange: move |e| {
-                            let sel_str = e.value();
-                            variant.set(sel_str.parse().unwrap());
-                            if !(*game_name_changed.read()) {
-                                game_name.set(default_game_name(&variant.read().name));
-                            }
-                        },
-                        option { value: "Copenhagen", "Copenhagen" }
-                        option { value: "Brandubh", "Brandubh" }
-                        option { value: "Tablut", "Tablut" }
-                        option { value: "Magpie", "Magpie" }
-                    }
-                }
-            }
-
-            div {
-                class: "players-section",
-
-                // Attacker Player
-                div {
-                    class: "player-config attacker",
-
-                    h3 {
-                        class: "player-title",
-                        "Attacker"
-                    }
+                    class: "setup-section",
 
                     div {
                         class: "form-group",
-
                         label {
                             class: "form-label",
                             "Name:"
                         }
-
                         input {
                             class: "form-input",
                             r#type: "text",
-                            value: "{attacker_name}",
-                            oninput: move |e| attacker_name.set(e.value())
+                            value: "{game_name}",
+                            oninput: move |e| {
+                                game_name.set(e.value());
+                                game_name_changed.set(true);
+                            }
                         }
                     }
 
                     div {
                         class: "form-group",
-
                         label {
                             class: "form-label",
-                            "Player Type:"
+                            "Ruleset:"
                         }
-
                         select {
                             class: "form-select",
                             onchange: move |e| {
-                                let value = if e.value() == "AI" { PlayerType::AI } else { PlayerType::Human };
-                                attacker_type.set(value);
+                                let sel_str = e.value();
+                                variant.set(sel_str.parse().unwrap());
+                                if !(*game_name_changed.read()) {
+                                    game_name.set(default_game_name(&variant.read().name));
+                                }
                             },
-                            option { value: "Human", "Human" }
-                            option { value: "AI", "AI" }
+                            option { value: "Copenhagen", "Copenhagen" }
+                            option { value: "Brandubh", "Brandubh" }
+                            option { value: "Tablut", "Tablut" }
+                            option { value: "Magpie", "Magpie" }
                         }
                     }
+                }
 
-                    if attacker_type.read().deref() == &PlayerType::AI {
+                div {
+                    class: "players-section",
+
+                    // Attacker Player
+                    div {
+                        class: "player-config attacker",
+
+                        h3 {
+                            class: "player-title",
+                            "Attacker"
+                        }
+
                         div {
                             class: "form-group",
 
                             label {
                                 class: "form-label",
-                                "AI Think Time (seconds):"
+                                "Name:"
                             }
 
                             input {
                                 class: "form-input",
-                                r#type: "number",
-                                min: "1",
-                                max: "60",
-                                value: "{attacker_ai_time}",
-                                oninput: move |e| {
-                                    if let Ok(val) = e.value().parse::<u32>() {
-                                        attacker_ai_time.set(val);
+                                r#type: "text",
+                                value: "{attacker_name}",
+                                oninput: move |e| attacker_name.set(e.value())
+                            }
+                        }
+
+                        div {
+                            class: "form-group",
+
+                            label {
+                                class: "form-label",
+                                "Player Type:"
+                            }
+
+                            select {
+                                class: "form-select",
+                                onchange: move |e| {
+                                    let value = if e.value() == "AI" { PlayerType::AI } else { PlayerType::Human };
+                                    attacker_type.set(value);
+                                },
+                                option { value: "Human", "Human" }
+                                option { value: "AI", "AI" }
+                            }
+                        }
+
+                        if attacker_type.read().deref() == &PlayerType::AI {
+                            div {
+                                class: "form-group",
+
+                                label {
+                                    class: "form-label",
+                                    "AI Think Time (seconds):"
+                                }
+
+                                input {
+                                    class: "form-input",
+                                    r#type: "number",
+                                    min: "1",
+                                    max: "60",
+                                    value: "{attacker_ai_time}",
+                                    oninput: move |e| {
+                                        if let Ok(val) = e.value().parse::<u32>() {
+                                            attacker_ai_time.set(val);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Defender Player
+                    div {
+                        class: "player-config defender",
+
+                        h3 {
+                            class: "player-title",
+                            "Defender"
+                        }
+
+                        div {
+                            class: "form-group",
+
+                            label {
+                                class: "form-label",
+                                "Name:"
+                            }
+
+                            input {
+                                class: "form-input",
+                                r#type: "text",
+                                value: "{defender_name}",
+                                oninput: move |e| defender_name.set(e.value())
+                            }
+                        }
+
+                        div {
+                            class: "form-group",
+
+                            label {
+                                class: "form-label",
+                                "Player Type:"
+                            }
+
+                            select {
+                                class: "form-select",
+                                onchange: move |e| {
+                                    let value = if e.value() == "AI" { PlayerType::AI } else { PlayerType::Human };
+                                    defender_type.set(value);
+                                },
+                                option { value: "Human", "Human" }
+                                option { value: "AI", "AI" }
+                            }
+                        }
+
+                        if defender_type.read().deref() == &PlayerType::AI {
+                            div {
+                                class: "form-group",
+
+                                label {
+                                    class: "form-label",
+                                    "AI Think Time (seconds):"
+                                }
+
+                                input {
+                                    class: "form-input",
+                                    r#type: "number",
+                                    min: "1",
+                                    max: "60",
+                                    value: "{defender_ai_time}",
+                                    oninput: move |e| {
+                                        if let Ok(val) = e.value().parse::<u32>() {
+                                            defender_ai_time.set(val);
+                                        }
                                     }
                                 }
                             }
@@ -253,80 +321,11 @@ pub(crate) fn GameSetup() -> Element {
                     }
                 }
 
-                // Defender Player
-                div {
-                    class: "player-config defender",
-
-                    h3 {
-                        class: "player-title",
-                        "Defender"
-                    }
-
-                    div {
-                        class: "form-group",
-
-                        label {
-                            class: "form-label",
-                            "Name:"
-                        }
-
-                        input {
-                            class: "form-input",
-                            r#type: "text",
-                            value: "{defender_name}",
-                            oninput: move |e| defender_name.set(e.value())
-                        }
-                    }
-
-                    div {
-                        class: "form-group",
-
-                        label {
-                            class: "form-label",
-                            "Player Type:"
-                        }
-
-                        select {
-                            class: "form-select",
-                            onchange: move |e| {
-                                let value = if e.value() == "AI" { PlayerType::AI } else { PlayerType::Human };
-                                defender_type.set(value);
-                            },
-                            option { value: "Human", "Human" }
-                            option { value: "AI", "AI" }
-                        }
-                    }
-
-                    if defender_type.read().deref() == &PlayerType::AI {
-                        div {
-                            class: "form-group",
-
-                            label {
-                                class: "form-label",
-                                "AI Think Time (seconds):"
-                            }
-
-                            input {
-                                class: "form-input",
-                                r#type: "number",
-                                min: "1",
-                                max: "60",
-                                value: "{defender_ai_time}",
-                                oninput: move |e| {
-                                    if let Ok(val) = e.value().parse::<u32>() {
-                                        defender_ai_time.set(val);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                button {
+                    class: "start-game-btn",
+                    onclick: start_game,
+                    "Start Game"
                 }
-            }
-
-            button {
-                class: "start-game-btn",
-                onclick: start_game,
-                "Start Game"
             }
         }
     }

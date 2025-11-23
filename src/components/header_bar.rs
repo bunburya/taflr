@@ -13,10 +13,18 @@ pub(crate) fn HeaderBar(title: String) -> Element {
                 class: "header-text",
                 { title }
             }
-            NavButton {
-                route: Route::MainMenu,
-                class: "header-nav-home",
-                text: "⌂"
+            div {
+                class: "header-button-container",
+                NavButton {
+                    route: Route::MainMenu,
+                    class: "header-button",
+                    text: "Home"
+                }
+                NavButton {
+                    route: Route::Quit,
+                    class: "header-button",
+                    text: "Quit"
+                }
             }
         }
     }

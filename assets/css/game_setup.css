@@ -1,10 +1,7 @@
 /* Game Setup Container */
 .game-setup-container {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 2rem;
-    background-color: var(--primary-medium);
-    border-radius: 12px;
+    width: stretch;
+    padding: var(--space-md);
 }
 
 /* Title */

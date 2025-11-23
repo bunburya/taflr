@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
 use hnefatafl::pieces::Side;
+use crate::components::header_bar::HeaderBar;
 use crate::components::navbutton::NavButton;
 use crate::message::error_msg;
 use crate::route::Route;
@@ -56,9 +57,17 @@ fn SavedGameInfoView(saved_game: SavedGameInfo, to_delete: Signal<Option<i64>>) 
 #[component]
 fn SavedGameList(saved_games: Signal<Vec<SavedGameInfo>>, to_delete: Signal<Option<i64>>) -> Element {
     rsx! {
-        for saved_game in &*saved_games.read() {
-            SavedGameInfoView { saved_game: saved_game.clone(), to_delete: to_delete }
+        div {
+            class: "main-container",
+            HeaderBar { title: "Load Game" }
+            div {
+                class: "saved-game-container",
+                for saved_game in &*saved_games.read() {
+                    SavedGameInfoView { saved_game: saved_game.clone(), to_delete: to_delete }
+                }
+            }
         }
+
     }
 }
 

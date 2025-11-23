@@ -31,6 +31,7 @@ fn Style() -> Element {
         document::Stylesheet { href: asset!("/assets/css/game.css") }
         document::Stylesheet { href: asset!("/assets/css/game_setup.css") }
         document::Stylesheet { href: asset!("/assets/css/header_bar.css") }
+        document::Stylesheet { href: asset!("/assets/css/about.css") }
     }
 }
 

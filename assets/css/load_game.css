@@ -1,10 +1,9 @@
 .saved-game-info {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 0.75rem;
+    gap: var(--space-md);
+    padding: var(--space-md);
     border: 1px solid var(--charcoal);
-    border-radius: 8px;
     background-color: var(--primary-medium);
     height: 80px;
 }
@@ -28,9 +27,9 @@
 }
 
 .saved-game-info-player {
-    padding: 0.25rem 0.5rem;
+    padding: var(--space-xs);
     border-radius: 4px;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     background-color: var(--primary-medium);
     text-align: center;
     color: var(--ivory);
@@ -45,10 +44,10 @@
 .saved-game-button-container {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--space-sm);
     width: 30%;
 }
 
 .saved-game-load-button, .saved-game-delete-button {
-    padding: 0.5rem 1rem;
+    padding: var(--space-sm);
 }

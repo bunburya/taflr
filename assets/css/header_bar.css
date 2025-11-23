@@ -1,9 +1,37 @@
 .header-bar {
+    width: stretch;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background-color: var(--primary-dark);
+    padding: var(--space-md);
+    flex-direction: row;
 }
 
 .header-text {
     font-weight: bold;
+    font-size: 1.5rem;
+    color: var(--ivory);
+}
+
+.header-button-container {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    gap: var(--space-sm);
+}
+
+.header-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    text-decoration: none;
+    text-align: center;
+    background: var(--green);
+    color: var(--ivory);
+    padding: var(--space-md);
+    border-radius: var(--radius-sm);
+    transition: background 0.3s ease, transform 0.2s ease;
 }
