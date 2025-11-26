@@ -21,6 +21,17 @@
     gap: var(--space-sm);
 }
 
+.header-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    background: var(--green);
+    color: var(--ivory);
+    padding: var(--space-md);
+    border-radius: var(--radius-sm);
+}
+
 .header-button {
     display: flex;
     justify-content: center;

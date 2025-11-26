@@ -1,8 +1,20 @@
 use dioxus::prelude::*;
-use crate::components::navbutton::NavButton;
 use crate::route::Route;
 
-const HOME: Asset = asset!("/assets/icons/home.svg");
+const HOME_ICON: &str = include_str!("../../assets/icons/house_simple_32x32.svg");
+const QUIT_ICON: &str = include_str!("../../assets/icons/longship_half_simple_32x32.svg");
+
+#[component]
+fn HeaderIcon(html: &'static str, alt: &'static str, to: Route) -> Element {
+    rsx! {
+        Link {
+            class: "header-icon",
+            alt: alt,
+            to: to,
+            dangerous_inner_html: html
+        }
+    }
+}
 
 #[component]
 pub(crate) fn HeaderBar(title: String) -> Element {
@@ -13,17 +25,18 @@ pub(crate) fn HeaderBar(title: String) -> Element {
                 class: "header-text",
                 { title }
             }
+
             div {
                 class: "header-button-container",
-                NavButton {
-                    route: Route::MainMenu,
-                    class: "header-button",
-                    text: "Home"
+                HeaderIcon {
+                    html: HOME_ICON,
+                    alt: "Home",
+                    to: Route::MainMenu
                 }
-                NavButton {
-                    route: Route::Quit,
-                    class: "header-button",
-                    text: "Quit"
+                HeaderIcon {
+                    html: QUIT_ICON,
+                    alt: "Quit",
+                    to: Route::Quit
                 }
             }
         }

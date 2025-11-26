@@ -1,3 +1,4 @@
 .about-container {
     color: var(--ivory);
+    padding: var(--space-md);
 }
